@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
   vector<MatrixType> vmat;
 
   // Parse the command line
-  for(size_t iarg = 1; iarg < argc; iarg++)
+  for(int iarg = 1; iarg < argc; iarg++)
     {
     string arg = argv[iarg];
     if(arg == "-ref")

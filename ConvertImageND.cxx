@@ -45,6 +45,7 @@
 #include "itkWindowedSincInterpolateImageFunction.h"
 
 #include <cstring>
+#include <algorithm>
 
 // Helper function: read a double, throw exception if unreadable
 double myatof(char *str)
@@ -502,7 +503,7 @@ ImageConverter<TPixel, VDim>
     SizeType sz = m_ImageStack.back()->GetBufferedRegion().GetSize();
     for(size_t i = 0; i < VDim; i++)
       {
-      sz[i] = (size_t)(0.5 + sz[i] * m_ImageStack.back()->GetSpacing()[i]) / vox[i];
+      sz[i] = static_cast<size_t>((0.5 + sz[i] * m_ImageStack.back()->GetSpacing()[i]) / vox[i]);
       }
     ResampleImage<TPixel, VDim> adapter(this);
     adapter(sz);
@@ -823,9 +824,6 @@ TPixel
 ImageConverter<TPixel, VDim>
 ::ReadIntensityValue(const char *vec)
 {
-  // Return value
-  TPixel rval = 0;
-
   // Check if the input is infinity first
   if(!strcmp(vec, "inf") || !strcmp(vec, "+inf") || !strcmp(vec, "Inf") || !strcmp(vec, "+Inf"))
     return vnl_huge_val(0.0);
@@ -1033,7 +1031,7 @@ size_t
 ImageConverter<TPixel, VDim>
 ::ForEachLoop(int argc, char *argv[])
 {
-  size_t narg;
+  size_t narg = 0;
 
   // Note: this is a rather lame implementation that uses recursion with
   // a state variable to repeat a range of command a bunch of times
@@ -1081,7 +1079,7 @@ ImageConverter<TPixel, VDim>
 {
   // Get the interpolation type
   string terp = m_Interpolation.c_str();
-  std::transform(terp.begin(), terp.end(), terp.begin(), tolower);
+  std::transform(terp.begin(), terp.end(), terp.begin(), (int(*)(int)) tolower);
 
   // Create the interpolator depending on parameter
   if(terp == "nearestneighbor" || terp == "nn" || terp == "0")

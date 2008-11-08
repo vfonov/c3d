@@ -13,6 +13,7 @@ IF(MSVC80 OR MSVC90)
 ENDIF(MSVC80 OR MSVC90)
 
 # Allow package generation
+SET(CPACK_PACKAGE_NAME "c3d")
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "C3D Medical Image Processing Tool")
 SET(CPACK_PACKAGE_VENDOR "itksnap.org")
 SET(CPACK_PACKAGE_VERSION_MAJOR "${C3D_VERSION_MAJOR}")
@@ -44,32 +45,16 @@ SET(CPACK_RESOURCE_FILE_LICENSE "${CONVERT3D_SOURCE_DIR}/COPYING")
 
 IF(WIN32 AND NOT UNIX)
 
-  # There is a bug in NSI that does not handle full unix paths properly. Make
-  # sure there is at least one set of four (4) backlasshes.
-  SET(CPACK_GENERATOR "NSIS")
-  SET(CPACK_NSIS_INSTALLED_ICON_NAME "c3d.exe")
-  SET(CPACK_NSIS_DISPLAY_NAME "${CPACK_PACKAGE_INSTALL_DIRECTORY} C3D")
-  SET(CPACK_NSIS_HELP_LINK "http:\\\\\\\\alliance.seas.upenn.edu\\\\~pauly2\\\\wiki\\\\index.php?n=Main.Convert3DTool")
-  SET(CPACK_NSIS_URL_INFO_ABOUT "")
-  SET(CPACK_NSIS_MODIFY_PATH ON)
-  
-  # Give it a windowsy directory name
-  SET(CPACK_PACKAGE_INSTALL_DIRECTORY "c3d")
-  
-  # On Win32, the executable is the actual exe
-  SET(CPACK_PACKAGE_EXECUTABLES c3d c2d)
-  
+  SET(CPACK_GENERATOR "ZIP")
+
 ELSE(WIN32 AND NOT UNIX)
 
   # Set the generator to either STGZ or Apple
   IF(NOT APPLE)
-    SET(CPACK_GENERATOR "STGZ")
+    SET(CPACK_GENERATOR "RPM" "TGZ")
   ELSE(NOT APPLE)
     SET(CPACK_GENERATOR "ZIP")
   ENDIF(NOT APPLE)
-
-  # Executable is the forward sharing exe
-  SET(CPACK_PACKAGE_EXECUTABLES "c3d" "c2d")
 
 ENDIF(WIN32 AND NOT UNIX)
 

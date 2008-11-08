@@ -3,8 +3,8 @@
   Program:   Insight Segmentation & Registration Toolkit
   Module:    $RCSfile: itkVoxBoCUBImageIO.cxx,v $
   Language:  C++
-  Date:      $Date: 2008/11/08 01:42:03 $
-  Version:   $Revision: 1.1 $  
+  Date:      $Date: 2008/11/08 03:14:12 $
+  Version:   $Revision: 1.2 $  
 
   Copyright (c) Insight Software Consortium. All rights reserved.
   See ITKCopyright.txt or http://www.itk.org/HTML/Copyright.htm for details.
@@ -207,7 +207,7 @@ public:
       throw exception;
       }
 
-    int bread = fread(data, 1, bytes, m_File);
+    unsigned long bread = fread(data, 1, bytes, m_File);
     if(bread != bytes)
       {
       std::ostringstream oss;
@@ -230,7 +230,7 @@ public:
       throw exception;
       }
 
-    int bwritten = fwrite(data, 1, bytes, m_File);
+    unsigned long bwritten = fwrite(data, 1, bytes, m_File);
     if(bwritten != bytes)
       {
       ExceptionObject exception;
