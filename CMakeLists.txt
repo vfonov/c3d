@@ -1,0 +1,94 @@
+PROJECT(CONVERT3D)
+
+# Nonsense for cmake 2.6 compatibility
+CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
+if(COMMAND cmake_policy)
+  cmake_policy(SET CMP0003 NEW)
+endif(COMMAND cmake_policy)
+
+
+INCLUDE_DIRECTORIES(${CONVERT3D_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CONVERT3D_SOURCE_DIR}/adapters)
+INCLUDE_DIRECTORIES(${CONVERT3D_SOURCE_DIR}/itkextras/)
+INCLUDE_DIRECTORIES(${CONVERT3D_SOURCE_DIR}/itkextras/VoxBoIO)
+INCLUDE_DIRECTORIES(${CONVERT3D_SOURCE_DIR}/itkextras/PovRayIO)
+
+# Get ITK
+FIND_PACKAGE(ITK)
+IF(ITK_FOUND)
+  INCLUDE(${ITK_USE_FILE})  
+  IF(ITK_VERSION_MAJOR LESS 3)
+    MESSAGE(FATAL_ERROR "This project requires ITK 3.4 or later")
+  ELSE(ITK_VERSION_MAJOR LESS 3)
+    IF(ITK_VERSION_MAJOR EQUAL 3 AND ITK_VERSION_MINOR LESS 4)
+      MESSAGE(FATAL_ERROR "This project requires ITK 3.4 or later")
+    ENDIF(ITK_VERSION_MAJOR EQUAL 3 AND ITK_VERSION_MINOR LESS 4)    
+  ENDIF(ITK_VERSION_MAJOR LESS 3)
+ELSE(ITK_FOUND)
+  MESSAGE(FATAL_ERROR
+    "Cannot build without ITK.  Please set ITK_DIR.")
+ENDIF(ITK_FOUND)  
+
+IF(WIN32)
+  ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
+ENDIF(WIN32)
+
+SET(SOURCES
+  adapters/AddImages.cxx
+  adapters/AntiAliasImage.cxx
+  adapters/ApplyMetric.cxx
+  adapters/ClipImageIntensity.cxx
+  adapters/ComputeFFT.cxx
+  adapters/ComputeOverlaps.cxx
+  adapters/ConnectedComponents.cxx
+  adapters/CopyTransform.cxx
+  adapters/CreateImage.cxx
+  adapters/CreateInterpolator.cxx
+  adapters/ExtractRegion.cxx
+  adapters/ImageERF.cxx
+  adapters/ImageLaplacian.cxx
+  adapters/GeneralLinearModel.cxx
+  adapters/LabelStatistics.cxx
+  adapters/LevelSetSegmentation.cxx
+  adapters/MathematicalMorphology.cxx
+  adapters/MultiplyImages.cxx
+  adapters/PeronaMalik.cxx
+  adapters/PrintImageInfo.cxx
+  adapters/ReadImage.cxx
+  adapters/ReciprocalImage.cxx
+  adapters/ReplaceIntensities.cxx
+  adapters/ResampleImage.cxx
+  adapters/ResliceImage.cxx
+  adapters/SampleImage.cxx
+  adapters/ScaleShiftImage.cxx
+  adapters/SignedDistanceTransform.cxx
+  adapters/SmoothImage.cxx
+  adapters/SplitMultilabelImage.cxx
+  adapters/StapleAlgorithm.cxx
+  adapters/ThresholdImage.cxx
+  adapters/TrimImage.cxx
+  adapters/UpdateMetadataKey.cxx
+  adapters/Vote.cxx
+  adapters/WarpImage.cxx
+  adapters/WarpLabelImage.cxx
+  adapters/WriteImage.cxx
+  ConvertImageND.cxx)
+
+# Define the ITK libraries
+SET(ITK_LIBRARIES
+  ITKNumerics ITKIO ITKCommon ITKBasicFilters ITKStatistics)
+
+# Get the extra stuff compiled
+SUBDIRS(itkextras)
+SUBDIRS(utilities)
+
+ADD_LIBRARY(cnd ${SOURCES})
+
+LINK_LIBRARIES(
+  cnd ${ITK_LIBRARIES} ITKVoxBoIO ITKPovRayIO)
+
+ADD_EXECUTABLE(c3d Convert3DMain.cxx)
+
+ADD_EXECUTABLE(c2d Convert2DMain.cxx)
+
+INSTALL_TARGETS("/bin" c3d c2d)
