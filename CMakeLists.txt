@@ -58,6 +58,7 @@ SET(SOURCES
   adapters/LevelSetSegmentation.cxx
   adapters/MathematicalMorphology.cxx
   adapters/MultiplyImages.cxx
+  adapters/PadImage.cxx
   adapters/PeronaMalik.cxx
   adapters/PrintImageInfo.cxx
   adapters/ReadImage.cxx

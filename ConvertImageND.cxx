@@ -18,6 +18,7 @@
 #include "LevelSetSegmentation.h"
 #include "MathematicalMorphology.h"
 #include "MultiplyImages.h"
+#include "PadImage.h"
 #include "PeronaMalik.h"
 #include "PrintImageInfo.h"
 #include "ReadImage.h"
@@ -384,6 +385,26 @@ ImageConverter<TPixel, VDim>
     ComputeOverlaps<TPixel, VDim> adapter(this);
     adapter(label);
     return 1;
+    }
+
+  else if(cmd == "-pad")
+    {
+      // specify two sizes that give the padding in x,y,z
+      // pad is the offset (in voxels) from the edge of the image to the
+      // padExtent. Example: -pad 1x1x1vox 0x0x0vox pads on the left, posterior, inferior sides
+      // by one voxel -pad 10x10x10% 10x10x10% adds 10% on all sides
+      IndexType padExtentLower, padExtentUpper;
+
+      padExtentLower = ReadIndexVector(argv[1]);
+      padExtentUpper = ReadIndexVector(argv[2]);
+
+      float padValue = atof(argv[3]);
+
+      *verbose << "Padding image #" << m_ImageStack.size() << endl;
+
+      PadImage<TPixel, VDim> adapter(this);
+      adapter(padExtentLower, padExtentUpper, padValue);
+      return 3;
     }
 
   else if(cmd == "-pixel")
