@@ -23,8 +23,8 @@ WarpImage<TPixel, VDim>
 
   // Store the direction temporarily
   itk::Matrix<double, VDim, VDim> dirin = isrc->GetDirection(), dirtemp;
-  dirtemp.SetIdentity();
-  isrc->SetDirection(dirtemp);
+  // dirtemp.SetIdentity();
+  // isrc->SetDirection(dirtemp);
 
   // Create a deformation field
   typedef itk::ImageToVectorImageFilter<ImageType> VectorFilter;
@@ -56,7 +56,7 @@ WarpImage<TPixel, VDim>
   // Update the warp fileter
   fltWarp->SetOutputSpacing(isrc->GetSpacing());
   fltWarp->SetOutputOrigin(isrc->GetOrigin());
-  fltWarp->SetOutputDirection(dirtemp);
+  fltWarp->SetOutputDirection(dirin);
   fltWarp->SetEdgePaddingValue(c->m_Background);
   fltWarp->Update();
 
