@@ -10,13 +10,16 @@
 #include "ConvertAdapter.h"
 #include "CopyTransform.h"
 #include "CreateImage.h"
+#include "CreateInterpolator.h"
 #include "ExtractRegion.h"
 #include "GeneralLinearModel.h"
+#include "HistogramMatch.h"
 #include "ImageERF.h"
 #include "ImageLaplacian.h"
 #include "LabelStatistics.h"
 #include "LevelSetSegmentation.h"
 #include "MathematicalMorphology.h"
+#include "MixtureModel.h"
 #include "MultiplyImages.h"
 #include "PadImage.h"
 #include "PeronaMalik.h"
@@ -29,21 +32,18 @@
 #include "SampleImage.h"
 #include "ScaleShiftImage.h"
 #include "SignedDistanceTransform.h"
+#include "SimpleElasticRegistration.h"
 #include "SmoothImage.h"
 #include "SplitMultilabelImage.h"
 #include "StapleAlgorithm.h"
 #include "ThresholdImage.h"
 #include "TrimImage.h"
+#include "UnaryMathOperation.h"
 #include "UpdateMetadataKey.h"
 #include "Vote.h"
 #include "WarpImage.h"
 #include "WarpLabelImage.h"
 #include "WriteImage.h"
-
-#include "itkNearestNeighborInterpolateImageFunction.h"
-#include "itkLinearInterpolateImageFunction.h"
-#include "itkBSplineInterpolateImageFunction.h"
-#include "itkWindowedSincInterpolateImageFunction.h"
 
 #include <cstring>
 #include <algorithm>
@@ -66,7 +66,6 @@ ImageConverter<TPixel,VDim>
 {
   // Initialize to defaults
   m_TypeId = "float";
-  m_Interpolation = "Linear";
   m_Background = 0.0;
   m_RoundFactor = 0.5;
   m_FlagSPM = false;
@@ -77,7 +76,9 @@ ImageConverter<TPixel,VDim>
   m_LevSetCurvature = 0.2;
   m_LevSetAdvection = 0.0;
 
-  SetInterpolator();
+  // Create an interpolator
+  m_Interpolation = "linear";
+  CreateInterpolator<TPixel, VDim>(this).CreateLinear();
 }
 
 template<class TPixel, unsigned int VDim>
@@ -197,6 +198,14 @@ ImageConverter<TPixel, VDim>
     return 0;
     }
 
+  else if(cmd == "-elastic")
+    {
+    // Perform very simple elastic registration
+    SimpleElasticRegistration<TPixel, VDim> elastic(this);
+    elastic();
+    return 0;
+    }
+
   else if(cmd == "-endfor")
     {
     // This command ends the for loop
@@ -222,6 +231,13 @@ ImageConverter<TPixel, VDim>
     return 2;
     }
 
+  else if(cmd == "-exp")
+    {
+    UnaryMathOperation<TPixel, VDim> adapter(this);
+    adapter(&vcl_exp);
+    return 0;
+    }
+
   else if(cmd == "-fft")
     {
     ComputeFFT<TPixel, VDim> adapter(this);
@@ -244,6 +260,14 @@ ImageConverter<TPixel, VDim>
     GeneralLinearModel<TPixel, VDim> adapter(this);
     adapter(mat, con);
     return 2;
+    }
+
+  else if(cmd == "-histmatch" || cmd == "-histogram-match")
+    {
+    size_t nmatch = atoi(argv[1]);
+    HistogramMatch<TPixel, VDim> adapter(this);
+    adapter(nmatch);
+    return 1;
     }
 
   else if(cmd == "-info")
@@ -284,9 +308,43 @@ ImageConverter<TPixel, VDim>
 
   else if(cmd == "-interpolation" || cmd == "-interp" || cmd == "-int")
     { 
+    // Adapter that creates interpolators
+    CreateInterpolator<TPixel, VDim> adapter(this);
+
+    // Interpret the interpolation type
     m_Interpolation = argv[1];
-    SetInterpolator();
-    return 1; 
+    std::transform(m_Interpolation.begin(), m_Interpolation.end(), m_Interpolation.begin(), (int(*)(int)) tolower);
+
+    if(m_Interpolation == "nearestneighbor" || m_Interpolation == "nn" || m_Interpolation == "0")
+      {
+      adapter.CreateNN(); 
+      return 1;
+      }
+    else if(m_Interpolation == "linear" || m_Interpolation == "1")
+      {
+      adapter.CreateLinear();
+      return 1;
+      }
+    else if(m_Interpolation == "cubic" || m_Interpolation == "3")
+      {
+      adapter.CreateCubic(); 
+      return 1;
+      }
+    else if(m_Interpolation == "sinc")
+      {
+      adapter.CreateSinc();
+      return 1;
+      }
+    else if(m_Interpolation == "gaussian")
+      {
+      RealVector sigma = ReadRealVector(argv[2]);
+      adapter.CreateGaussian(sigma);
+      return 2;
+      }
+    else
+      {
+      throw ConvertException("Unknown interpolation type: %s", m_Interpolation.c_str());
+      }
     }
 
   else if(cmd == "-iterations")
@@ -328,6 +386,33 @@ ImageConverter<TPixel, VDim>
     return 1;
     }
 
+  else if(cmd == "-ln" || cmd == "-log")
+    {
+    UnaryMathOperation<TPixel, VDim> adapter(this);
+    adapter(&vcl_log);
+    return 0;
+    }
+
+  else if(cmd == "-log10")
+    {
+    UnaryMathOperation<TPixel, VDim> adapter(this);
+    adapter(&vcl_log10);
+    return 0;
+    }
+
+  else if(cmd == "-mean")
+    {
+    size_t n = m_ImageStack.size();
+    for(size_t i = 1; i < n; i++)
+      {
+      AddImages<TPixel,VDim> adapter(this);
+      adapter();
+      }
+    ScaleShiftImage<TPixel, VDim> scaler(this);
+    scaler(1.0 / n, 0.0);
+    return 0;
+    }
+
   else if(cmd == "-merge")
     {
     Vote<TPixel, VDim> adapter(this);
@@ -342,6 +427,25 @@ ImageConverter<TPixel, VDim>
     return 0;
     }
 
+  else if(cmd == "-mixture" || cmd == "-mixture-model")
+    {
+    int ncomp = atoi(argv[1]);
+    if(ncomp == 0)
+      throw ConvertException("Incorrect specification of mixture model initialization");
+
+    std::vector<double> mu, sigma;
+    for(int i = 0; i < ncomp; i++)
+      {
+      mu.push_back(ReadIntensityValue(argv[2 + 2 * i]));
+      sigma.push_back(ReadIntensityValue(argv[3 + 2 * i]));
+      }
+
+    MixtureModel<TPixel, VDim> adapter(this);
+    adapter(mu, sigma);
+
+    return 1 + 2 * ncomp;
+    }
+
   else if(cmd == "-multiply" || cmd == "-times")
     {
     MultiplyImages<TPixel, VDim> adapter(this);
@@ -354,6 +458,34 @@ ImageConverter<TPixel, VDim>
     ApplyMetric<TPixel, VDim> adapter(this);
     adapter("NMI");
     return 0;
+    }
+
+  else if(cmd == "-normpdf")
+    {
+    // Compute normal PDF of intensity values given sigma and mu
+    double mu = atof(argv[1]);
+    double s = atof(argv[2]);
+
+    // Subtract mu
+    ScaleShiftImage<TPixel, VDim> scale1(this);
+    scale1(1.0, -mu);
+
+    // Square
+    m_ImageStack.push_back(m_ImageStack.back());
+    MultiplyImages<TPixel, VDim> times(this);
+    times();
+
+    // Scale by -1/2s
+    ScaleShiftImage<TPixel, VDim> scale2(this);
+    scale2(-0.5 / s, 0.0);
+
+    // Exponentiate
+    UnaryMathOperation<TPixel, VDim> exp1(this);
+    exp1(&vcl_exp);
+
+    // Scale by factor
+    ScaleShiftImage<TPixel, VDim> scale3(this);
+    scale3(1.0 / sqrt(2 * M_PI * s * s), 0.0);
     }
 
   else if(cmd == "-noround")
@@ -596,6 +728,13 @@ ImageConverter<TPixel, VDim>
     {
     SplitMultilabelImage<TPixel, VDim> adapter(this);
     adapter();
+    return 0;
+    }
+
+  else if(cmd == "-sqrt")
+    {
+    UnaryMathOperation<TPixel, VDim> adapter(this);
+    adapter(&vcl_sqrt);
     return 0;
     }
 
@@ -1092,43 +1231,6 @@ ImageConverter<TPixel, VDim>
   // Return the number of arguments to the next command
   return narg - 1;
 }
-
-template<class TPixel, unsigned int VDim>
-void
-ImageConverter<TPixel, VDim>
-::SetInterpolator()
-{
-  // Get the interpolation type
-  string terp = m_Interpolation.c_str();
-  std::transform(terp.begin(), terp.end(), terp.begin(), (int(*)(int)) tolower);
-
-  // Create the interpolator depending on parameter
-  if(terp == "nearestneighbor" || terp == "nn" || terp == "0")
-    {
-    typedef itk::NearestNeighborInterpolateImageFunction<ImageType,double> NNInterpolatorType;
-    m_Interpolator = NNInterpolatorType::New();
-    }
-  else if(terp == "linear" || terp == "1")
-    {
-    typedef itk::LinearInterpolateImageFunction<ImageType,double> LinearInterpolatorType;
-    m_Interpolator = LinearInterpolatorType::New();
-    }
-  else if(terp == "cubic" || terp == "3")
-    {
-    typedef itk::BSplineInterpolateImageFunction<ImageType,double> CubicInterpolatorType;
-    m_Interpolator = CubicInterpolatorType::New();
-    }
-  else if(terp == "sinc")
-    {
-    typedef itk::WindowedSincInterpolateImageFunction<ImageType, 4> SincInterpolatorType;
-    m_Interpolator = SincInterpolatorType::New();
-    }
-  else
-    { 
-    throw ConvertException("Unknown interpolation type: %s", m_Interpolation.c_str());
-    }
-}
-
 
 template class ImageConverter<double, 2>;
 template class ImageConverter<double, 3>;

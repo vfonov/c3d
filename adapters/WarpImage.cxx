@@ -22,7 +22,7 @@ WarpImage<TPixel, VDim>
   ImagePointer isrc = c->m_ImageStack[c->m_ImageStack.size() - 1];
 
   // Store the direction temporarily
-  itk::Matrix<double, VDim, VDim> dirin = isrc->GetDirection(), dirtemp;
+  // itk::Matrix<double, VDim, VDim> dirin = isrc->GetDirection(), dirtemp;
   // dirtemp.SetIdentity();
   // isrc->SetDirection(dirtemp);
 
@@ -50,13 +50,12 @@ WarpImage<TPixel, VDim>
   fltWarp->SetDeformationField(field);
 
   // Create interpolator
-  CreateInterpolator<TPixel, VDim> interp(c);
-  fltWarp->SetInterpolator(interp());
+  fltWarp->SetInterpolator(c->GetInterpolator());
 
   // Update the warp fileter
-  fltWarp->SetOutputSpacing(isrc->GetSpacing());
-  fltWarp->SetOutputOrigin(isrc->GetOrigin());
-  fltWarp->SetOutputDirection(dirin);
+  fltWarp->SetOutputSpacing(field->GetSpacing());
+  fltWarp->SetOutputOrigin(field->GetOrigin());
+  fltWarp->SetOutputDirection(field->GetDirection());
   fltWarp->SetEdgePaddingValue(c->m_Background);
   fltWarp->Update();
 

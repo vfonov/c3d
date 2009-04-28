@@ -49,7 +49,7 @@ LabelStatistics<TPixel, VDim>
   for(set<short>::iterator it = sval.begin(); it != sval.end(); ++it)
     {
     // printf("xxxxx    xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx");
-    printf("%5i    %10.2f  %10.2f  %10.2f  %10.2f  %10lu\n",
+    printf("%5i    %10.5f  %10.5f  %10.5f  %10.5f  %10lu\n",
       (int) *it, 
       fltStat->GetMean(*it), 
       fltStat->GetSigma(*it), 

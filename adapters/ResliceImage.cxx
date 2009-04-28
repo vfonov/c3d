@@ -3,7 +3,11 @@
 #include <iostream>
 #include <itkAffineTransform.h>
 #include <itkTransformFileReader.h>
+#include <itkTransformFactory.h>
 #include "itkResampleImageFilter.h"
+#include "gsGSAffine3DTransform.h"
+
+#include <itkTransformFactory.h>
 
 template<unsigned int VDim>
 void ReadMatrix(const char *fname, itk::Matrix<double,VDim+1,VDim+1> &mat)
@@ -46,14 +50,23 @@ ResliceImage<TPixel, VDim>
   // Read transform based on type
   if(format=="itk")
     {
+    typedef itk::MatrixOffsetTransformBase<double, VDim, VDim> MOTBType;
+    typedef itk::AffineTransform<double, VDim> AffTran;
+    itk::TransformFactory<MOTBType>::RegisterTransform();
+    itk::TransformFactory<AffTran>::RegisterTransform();
+
     itk::TransformFileReader::Pointer fltReader = itk::TransformFileReader::New();
     fltReader->SetFileName(fn_tran);
     fltReader->Update();
 
-    atran->SetFixedParameters(  
-      fltReader->GetTransformList()->front()->GetFixedParameters());
-    atran->SetParameters(  
-      fltReader->GetTransformList()->front()->GetParameters());
+    itk::TransformBase *base = fltReader->GetTransformList()->front();
+    MOTBType *motb = dynamic_cast<MOTBType *>(base);
+
+    if(motb)
+      {
+      atran->SetMatrix(motb->GetMatrix());
+      atran->SetOffset(motb->GetOffset());
+      }
     }
   else if(format=="matrix")
     {

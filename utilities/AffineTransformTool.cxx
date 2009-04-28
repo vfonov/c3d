@@ -1,5 +1,9 @@
 #include "itkOrientedRASImage.h"
 #include "itkImageFileReader.h"
+#include <itkAffineTransform.h>
+#include <itkTransformFileReader.h>
+#include <itkTransformFileWriter.h>
+#include <itkTransformFactory.h>
 #include "vnl/vnl_matrix_fixed.h"
 #include "vnl/vnl_det.h"
 #include "vnl/vnl_inverse.h"
@@ -24,7 +28,85 @@ int usage()
   cout << "  -fsl2ras      Convert FSL to RAS" << endl;
   cout << "  -mult         Multiply matrices" << endl;
   cout << "  -inv          Invert matrix" << endl;
+  cout << "  -det          Print the determinant" << endl;
+  cout << "  -itk file     Import ITK transform" << endl;
   return -1;
+}
+
+void itk_read(MatrixStack &vmat, const char *fname)
+{
+  typedef itk::MatrixOffsetTransformBase<double, 3, 3> MOTBType;
+  typedef itk::AffineTransform<double, 3> AffTran;
+  itk::TransformFactory<MOTBType>::RegisterTransform();
+  itk::TransformFactory<AffTran>::RegisterTransform();
+
+  itk::TransformFileReader::Pointer fltReader = itk::TransformFileReader::New();
+  fltReader->SetFileName(fname);
+  fltReader->Update();
+
+  itk::TransformBase *base = fltReader->GetTransformList()->front();
+  typedef itk::MatrixOffsetTransformBase<double, 3, 3> MOTBType;
+  MOTBType *motb = dynamic_cast<MOTBType *>(base);
+
+  MatrixType mat;
+  mat.set_identity();
+  if(motb)
+    {
+    for(size_t r = 0; r < 3; r++)
+      {
+      for(size_t c = 0; c < 3; c++)
+        {
+        mat(r,c) = motb->GetMatrix()(r,c);
+        }
+      mat(r,3) = motb->GetOffset()[r];
+      }
+    mat(2,0) *= -1; mat(2,1) *= -1; 
+    mat(0,2) *= -1; mat(1,2) *= -1;
+    mat(0,3) *= -1; mat(1,3) *= -1;
+    vmat.push_back(mat);
+    }
+  else
+    {
+    cerr << "Unable to read ITK transform file" << endl;
+    exit(-1);
+    }
+}
+
+void itk_write(MatrixStack &vmat, const char *fname)
+{
+  // Get the current matrix
+  MatrixType mat = vmat.back();
+  
+  // Flip the entries that must be flipped
+  mat(2,0) *= -1; mat(2,1) *= -1; 
+  mat(0,2) *= -1; mat(1,2) *= -1;
+  mat(0,3) *= -1; mat(1,3) *= -1;
+
+  // Create an ITK affine transform
+  typedef itk::MatrixOffsetTransformBase<double, 3> AffTran;
+  AffTran::Pointer atran = AffTran::New();
+
+  // Populate its matrix
+  AffTran::MatrixType amat = atran->GetMatrix();
+  AffTran::OffsetType aoff = atran->GetOffset();
+
+  for(size_t r = 0; r < 3; r++)
+    {
+    for(size_t c = 0; c < 3; c++)
+      {
+      amat(r,c) = mat(r,c);
+      }
+    aoff[r] = mat(r,3);
+    }
+
+  atran->SetMatrix(amat);
+  atran->SetOffset(aoff);
+
+  // Write the transform
+  itk::TransformFileWriter::Pointer wrt = itk::TransformFileWriter::New();
+  wrt->SetInput(atran);
+  wrt->SetFileName(fname);
+  wrt->Update();
 }
 
 void ras_read(MatrixStack &vmat, const char *fname)
@@ -113,6 +195,14 @@ void ras_inv(MatrixStack &vmat)
   vmat.push_back(minv);
 }
 
+void ras_det(MatrixStack &vmat)
+{
+  MatrixType m = vmat.back();
+  double det = vnl_det(m);
+  cout << "Det: " << det << endl;
+}
+
+
 void ras_mult(MatrixStack &vmat)
 {
   MatrixType A = vmat[vmat.size() - 2];
@@ -165,13 +255,25 @@ int main(int argc, char *argv[])
       {
       ras_mult(vmat);
       }
+    else if(arg == "-det")
+      {
+      ras_det(vmat);
+      }
     else if(arg == "-inv")
       {
       ras_inv(vmat);
       }
+    else if(arg == "-itk")
+      {
+      itk_read(vmat, argv[++iarg]);
+      }
     else if(arg == "-o")
       {
       ras_write(vmat, argv[++iarg]);
+      }
+    else if(arg == "-oitk")
+      {
+      itk_write(vmat, argv[++iarg]);
       }
     else if(arg[0] != '-')
       {

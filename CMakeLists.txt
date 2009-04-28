@@ -51,12 +51,14 @@ SET(SOURCES
   adapters/CreateImage.cxx
   adapters/CreateInterpolator.cxx
   adapters/ExtractRegion.cxx
+  adapters/HistogramMatch.cxx
   adapters/ImageERF.cxx
   adapters/ImageLaplacian.cxx
   adapters/GeneralLinearModel.cxx
   adapters/LabelStatistics.cxx
   adapters/LevelSetSegmentation.cxx
   adapters/MathematicalMorphology.cxx
+  adapters/MixtureModel.cxx
   adapters/MultiplyImages.cxx
   adapters/PadImage.cxx
   adapters/PeronaMalik.cxx
@@ -69,11 +71,13 @@ SET(SOURCES
   adapters/SampleImage.cxx
   adapters/ScaleShiftImage.cxx
   adapters/SignedDistanceTransform.cxx
+  adapters/SimpleElasticRegistration.cxx
   adapters/SmoothImage.cxx
   adapters/SplitMultilabelImage.cxx
   adapters/StapleAlgorithm.cxx
   adapters/ThresholdImage.cxx
   adapters/TrimImage.cxx
+  adapters/UnaryMathOperation.cxx
   adapters/UpdateMetadataKey.cxx
   adapters/Vote.cxx
   adapters/WarpImage.cxx

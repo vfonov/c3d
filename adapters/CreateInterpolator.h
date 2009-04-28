@@ -20,7 +20,11 @@ public:
   // Helper function: get interpolator based on current flag values
   typedef itk::InterpolateImageFunction<ImageType, double> InterpolatorType;
 
-  InterpolatorType *operator() ();
+  void CreateNN();
+  void CreateLinear();
+  void CreateCubic();
+  void CreateSinc();
+  void CreateGaussian(RealVector sigma);
 
 private:
   itk::SmartPointer<InterpolatorType> m_Interp;

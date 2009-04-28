@@ -91,6 +91,9 @@ public:
   Interpolator *GetInterpolator() const
     { return m_Interpolator; }
 
+  void SetInterpolator(Interpolator *interp)
+    { m_Interpolator = interp; }
+
 private:
 
   // Internal functions
@@ -111,7 +114,6 @@ private:
 
   // Image interpolator for all interpolation commands
   itk::SmartPointer<Interpolator> m_Interpolator;
-  void SetInterpolator();
 
   // Implementation of the 'foreach' loop
   size_t ForEachLoop(int argc, char *argv[]);

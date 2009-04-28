@@ -57,8 +57,7 @@ WarpLabelImage<TPixel, VDim>
   fltWarp->SetDeformationField(field);
 
   // Create interpolator
-  CreateInterpolator<TPixel, VDim> interp(c);
-  fltWarp->SetInterpolator(interp());
+  fltWarp->SetInterpolator(c->GetInterpolator());
 
   // Update the warp fileter
   fltWarp->SetOutputSpacing(field->GetSpacing());

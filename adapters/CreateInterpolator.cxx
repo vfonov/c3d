@@ -3,26 +3,54 @@
 #include "itkNearestNeighborInterpolateImageFunction.h"
 #include "itkLinearInterpolateImageFunction.h"
 #include "itkBSplineInterpolateImageFunction.h"
+#include "itkGaussianInterpolateImageFunction.h"
+#include "itkWindowedSincInterpolateImageFunction.h"
 
 template <class TPixel, unsigned int VDim>
-typename CreateInterpolator<TPixel, VDim>::InterpolatorType *
+void
 CreateInterpolator<TPixel, VDim>
-::operator() ()
+::CreateNN()
 {
   typedef itk::NearestNeighborInterpolateImageFunction<ImageType,double> NNInterpolatorType;
+  c->SetInterpolator(NNInterpolatorType::New());
+}
+
+template <class TPixel, unsigned int VDim>
+void
+CreateInterpolator<TPixel, VDim>
+::CreateLinear()
+{
   typedef itk::LinearInterpolateImageFunction<ImageType,double> LinearInterpolatorType;
+  c->SetInterpolator(LinearInterpolatorType::New());
+}
+
+template <class TPixel, unsigned int VDim>
+void
+CreateInterpolator<TPixel, VDim>
+::CreateCubic()
+{
   typedef itk::BSplineInterpolateImageFunction<ImageType,double> CubicInterpolatorType;
+  c->SetInterpolator(CubicInterpolatorType::New());
+}
 
-  // Create an interpolating function
-  if(c->m_Interpolation == "NearestNeighbor")
-    m_Interp = NNInterpolatorType::New();
-  else if(c->m_Interpolation == "Linear")
-    m_Interp = LinearInterpolatorType::New();
-  else if(c->m_Interpolation == "Cubic")
-    m_Interp = CubicInterpolatorType::New();
-  else throw string("Unknown interpolator type");
+template <class TPixel, unsigned int VDim>
+void
+CreateInterpolator<TPixel, VDim>
+::CreateSinc()
+{
+  typedef itk::WindowedSincInterpolateImageFunction<ImageType, 4> SincInterpolatorType;
+  c->SetInterpolator(SincInterpolatorType::New());
+}
 
-  return m_Interp;
+template <class TPixel, unsigned int VDim>
+void
+CreateInterpolator<TPixel, VDim>
+::CreateGaussian(RealVector sigma)
+{
+  typedef itk::GaussianInterpolateImageFunction<ImageType, double> GaussianInterpolatorType;
+  typename GaussianInterpolatorType::Pointer gi = GaussianInterpolatorType::New();
+  gi->SetParameters(sigma.data_block(), 4.0);
+  c->SetInterpolator(gi);
 }
 
 // Invocations
