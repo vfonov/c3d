@@ -3,8 +3,8 @@
   Program:   Insight Segmentation & Registration Toolkit
   Module:    $RCSfile: itkGaussianInterpolateImageFunction.h,v $
   Language:  C++
-  Date:      $Date: 2009/04/28 20:13:05 $
-  Version:   $Revision: 1.1 $
+  Date:      $Date: 2009/04/29 14:08:20 $
+  Version:   $Revision: 1.2 $
 
   Copyright (c) Insight Software Consortium. All rights reserved.
   See ITKCopyright.txt or http://www.itk.org/HTML/Copyright.htm for details.
@@ -69,6 +69,9 @@ public:
   /** ContinuousIndex typedef support. */
   typedef typename Superclass::ContinuousIndexType ContinuousIndexType;
 
+  /** Order specification (for derivatives) */
+  typedef Index<VDim> OrderType;
+
   /** Set input */
   virtual void SetInputImage(const TInputImage *img)
     {
@@ -96,6 +99,12 @@ public:
     this->alpha = alpha;
     }
 
+
+  void SetDerivativeOrder(OrderType order)
+    {
+    this->order = order;
+    }
+
   /** Evaluate the function at a ContinuousIndex position
    *
    * Returns the linearly interpolated image intensity at a 
@@ -112,7 +121,7 @@ public:
 
       // Compute the ERF difference arrays
       for(size_t d = 0; d < VDim; d++)
-        compute_erf_array(dx[d], i0[d], i1[d], bb_start[d], nt[d], cut[d], index[d], sf[d]);
+        compute_erf_array(dx[d], i0[d], i1[d], bb_start[d], nt[d], cut[d], index[d], sf[d], order[d]);
 
       // Get a pointer to the output value
       double sum_me = 0.0, sum_m = 0.0;
@@ -159,6 +168,19 @@ private:
   int nt[VDim], stride[VDim];
   double sigma[VDim], alpha;
 
+  OrderType order;
+
+  double erf_deriv(double t, int order) const
+    {
+    if(order == 0)
+      return erf(t);
+    if(order == 1)
+      return 1.128379167095513 * exp(- t * t);
+    if(order == 2)
+      return -2.256758334191025 * exp(- t * t);
+    return 0;
+    }
+
   void compute_erf_array (
     double *dx_erf,         // The output array of erf(p+i+1) - erf(p+i)
     int &k0, int &k1,       // The range of integration 0 <= k0 < k1 <= n
@@ -166,7 +188,8 @@ private:
     int n,                  // Size of the bounding box in steps
     double cut,             // The distance at which to cut off
     double p,               // the value p
-    double sfac) const      // scaling factor 1 / (Sqrt[2] sigma)
+    double sfac,            // scaling factor 1 / (Sqrt[2] sigma)
+    int order = 0) const      
       {
       // Determine the range of voxels along the line where to evaluate erf
       k0 = (int) floor(p - b - cut);
@@ -176,11 +199,11 @@ private:
 
       // Start at the first voxel
       double t = (b - p + k0) * sfac;
-      double e_last = erf(t);
+      double e_last = erf_deriv(t, order);
       for(int i = k0; i < k1; i++)
         {
         t += sfac;
-        double e_now = erf(t);
+        double e_now = erf_deriv(t, order);
         dx_erf[i] = e_now - e_last;
         e_last = e_now;
         }

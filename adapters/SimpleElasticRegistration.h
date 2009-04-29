@@ -27,6 +27,7 @@ private:
   Converter *c;
 
   double ComputeObjective();
+  double ComputeGradient();
 
   // Stuff for optimization
   ImagePointer iref, imov;

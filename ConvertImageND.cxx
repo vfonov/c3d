@@ -341,6 +341,13 @@ ImageConverter<TPixel, VDim>
       adapter.CreateGaussian(sigma);
       return 2;
       }
+    else if(m_Interpolation == "gaussjet" || m_Interpolation == "gaussian_jet")
+      {
+      RealVector sigma = ReadRealVector(argv[2]);
+      IndexType dir = ReadIndexVector(argv[3]);
+      adapter.CreateGaussianJet(sigma, dir);
+      return 3;
+      }
     else
       {
       throw ConvertException("Unknown interpolation type: %s", m_Interpolation.c_str());
@@ -826,6 +833,20 @@ ImageConverter<TPixel, VDim>
     for(size_t i = 0; i < n; i++)
       sum += m_ImageStack.back()->GetBufferPointer()[i];
     cout << "Voxel Sum: " << sum << endl;
+    return 0;
+    }
+
+  else if(cmd == "-voxel-integral" || cmd == "-voxel-int")
+    {
+    // Simply print the sum of all voxels in the image
+    double sum = 0;
+    size_t n = m_ImageStack.back()->GetBufferedRegion().GetNumberOfPixels();
+    for(size_t i = 0; i < n; i++)
+      sum += m_ImageStack.back()->GetBufferPointer()[i];
+    double vol = 1.0;
+    for(size_t d = 0; d < VDim; d++)
+      vol *= m_ImageStack.back()->GetSpacing()[d];
+    cout << "Voxel Integral: " << sum * vol << endl;
     return 0;
     }
 

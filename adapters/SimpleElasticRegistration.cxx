@@ -74,16 +74,17 @@ SimpleElasticRegistration<TPixel, VDim>
   return f_img / iref->GetBufferedRegion().GetNumberOfPixels();
 }
 
-/*
 template <class TPixel, unsigned int VDim>
 double
 SimpleElasticRegistration<TPixel, VDim>
 ::ComputeGradient()
 {
   // Compute the gradient of the image objective
+  return 0.0;
+
+
 
 }
-*/
 
 
 // Invocations

@@ -18,8 +18,7 @@ void ExpandRegion(itk::ImageRegion<VDim> &region, const itk::Index<VDim> &idx)
         region.SetSize(i, region.GetSize(i) + (region.GetIndex(i) - idx[i]));
         region.SetIndex(i, idx[i]);
         }
-      else if(region.GetIndex(i) + region.GetSize(i) <= idx[i])
-        {
+      else if(region.GetIndex(i) + (long) region.GetSize(i) <= idx[i]) {
         region.SetSize(i, 1 + idx[i] - region.GetIndex(i));
         }
       }
