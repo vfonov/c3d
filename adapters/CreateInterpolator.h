@@ -25,7 +25,6 @@ public:
   void CreateCubic();
   void CreateSinc();
   void CreateGaussian(RealVector sigma);
-  void CreateGaussianJet(RealVector sigma, IndexType order);
 
 private:
   itk::SmartPointer<InterpolatorType> m_Interp;

@@ -28,14 +28,14 @@ void ExpandRegion(itk::ImageRegion<VDim> &region, const itk::Index<VDim> &idx)
 template <class TPixel, unsigned int VDim>
 void
 TrimImage<TPixel, VDim>
-::operator() (const RealVector &margin)
+::operator() (const RealVector &vec, TrimMode mode)
 {
   // Get the input image
   ImagePointer input = c->m_ImageStack.back();
 
   // Debugging info
   *c->verbose << "Trimming #" << c->m_ImageStack.size() << endl;
-  *c->verbose << "  Wrapping non-background voxels with margin of " << margin << " mm." << endl;
+  
 
   // Initialize the bounding box
   RegionType bbox;
@@ -47,10 +47,26 @@ TrimImage<TPixel, VDim>
       ExpandRegion(bbox, it.GetIndex());
 
   // Pad the region by radius specified by user
-  typename ImageType::SizeType radius;
-  for(size_t i = 0; i < VDim; i++)
-    radius[i] = (int) ceil(margin[i] / input->GetSpacing()[i]);
-  bbox.PadByRadius(radius);
+  if(mode == SPECIFY_MARGIN)
+    {
+    *c->verbose << "  Wrapping non-background voxels with margin of " << vec << " mm." << endl;
+    typename ImageType::SizeType radius;
+    for(size_t i = 0; i < VDim; i++)
+      radius[i] = (int) ceil(vec[i] / input->GetSpacing()[i]);
+    bbox.PadByRadius(radius);
+    }
+  else if(mode == SPECIFY_FINALSIZE)
+    {
+    *c->verbose << "  Wrapping non-background voxels to create a region of size " << vec << " mm." << endl;
+    // Compute the radius to pad to
+    for(size_t i = 0; i < VDim; i++)
+      { 
+      int sznew = (int) (0.5 + vec[i] / input->GetSpacing()[i]);
+      int ixnew = bbox.GetIndex()[i] + bbox.GetSize()[i]/2 - sznew/2; 
+      bbox.SetIndex(i, ixnew);
+      bbox.SetSize(i, sznew);
+      }
+    }
 
   // Use the extract region code for the rest
   ExtractRegion<TPixel, VDim> extract(c);

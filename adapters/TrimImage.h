@@ -12,7 +12,11 @@ public:
 
   TrimImage(Converter *c) : c(c) {}
 
-  void operator() (const RealVector &margin);
+  enum TrimMode {
+    SPECIFY_MARGIN,
+    SPECIFY_FINALSIZE };
+
+  void operator() (const RealVector &vec, TrimMode mode);
 
 private:
   Converter *c;

@@ -71,7 +71,6 @@ SET(SOURCES
   adapters/SampleImage.cxx
   adapters/ScaleShiftImage.cxx
   adapters/SignedDistanceTransform.cxx
-  adapters/SimpleElasticRegistration.cxx
   adapters/SmoothImage.cxx
   adapters/SplitMultilabelImage.cxx
   adapters/StapleAlgorithm.cxx
@@ -83,11 +82,15 @@ SET(SOURCES
   adapters/WarpImage.cxx
   adapters/WarpLabelImage.cxx
   adapters/WriteImage.cxx
-  ConvertImageND.cxx)
+  ConvertImageND.cxx
+  adapters/cg_descent.c)
+
+# Pull in FFTW
+FIND_LIBRARY(FFTW_LIB fftw3f)
 
 # Define the ITK libraries
 SET(ITK_LIBRARIES
-  ITKNumerics ITKIO ITKCommon ITKBasicFilters ITKStatistics)
+  ITKNumerics ITKIO ITKCommon ITKBasicFilters ITKStatistics ITKAlgorithms)
 
 # Get the extra stuff compiled
 SUBDIRS(itkextras)

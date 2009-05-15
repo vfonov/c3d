@@ -3,8 +3,8 @@
   Program:   Insight Segmentation & Registration Toolkit
   Module:    $RCSfile: itkGaussianInterpolateImageFunction.h,v $
   Language:  C++
-  Date:      $Date: 2009/04/29 16:55:34 $
-  Version:   $Revision: 1.3 $
+  Date:      $Date: 2009/05/15 20:04:12 $
+  Version:   $Revision: 1.4 $
 
   Copyright (c) Insight Software Consortium. All rights reserved.
   See ITKCopyright.txt or http://www.itk.org/HTML/Copyright.htm for details.
@@ -69,40 +69,42 @@ public:
   /** ContinuousIndex typedef support. */
   typedef typename Superclass::ContinuousIndexType ContinuousIndexType;
 
-  /** Order specification (for derivatives) */
-  typedef Index<VDim> OrderType;
+  /** Compute internals */
+  virtual void ComputeBoundingBox()
+    {
+    const TInputImage *img = this->GetInputImage();
+    if(img == NULL) return;
+
+    // Set the bounding box
+    for(size_t d = 0; d < VDim; d++)
+      {
+      bb_start[d] = -0.5;
+      bb_end[d] = img->GetBufferedRegion().GetSize()[d] - 0.5;
+      nt[d] = (int)(bb_end[d] - bb_start[d] + 0.5);
+      dx[d].set_size(nt[d]);
+      gx[d].set_size(nt[d]);
+      sf[d] = 1.0 / (sqrt(2.0) * sigma[d] / img->GetSpacing()[d]);
+      cut[d] = sigma[d] * alpha / img->GetSpacing()[d];
+      }
+    }
 
   /** Set input */
   virtual void SetInputImage(const TInputImage *img)
     {
     // Call parent method
     Superclass::SetInputImage(img);
-
-    if(img == NULL) return;
-
-    // Set the bounding box
-    for(size_t d = 0; d < VDim; d++)
-      {
-      bb_start[d] = 0;
-      bb_end[d] = img->GetBufferedRegion().GetSize()[d] - 1;
-      nt[d] = (int)(bb_end[d] - bb_start[d] + 0.5);
-      dx[d] = new double[nt[d]];
-      sf[d] = 1.0 / (sqrt(2.0) * sigma[d]);
-      cut[d] = sigma[d] * alpha;
-      }
+    this->ComputeBoundingBox();
     }
 
   void SetParameters(double *sigma, double alpha)
     {
+    // Set the parameters
     for(size_t d = 0; d < VDim; d++)
       this->sigma[d] = sigma[d];
     this->alpha = alpha;
-    }
 
-
-  void SetDerivativeOrder(OrderType order)
-    {
-    this->order = order;
+    // If the image already set, recompute
+    this->ComputeBoundingBox();
     }
 
   /** Evaluate the function at a ContinuousIndex position
@@ -116,15 +118,27 @@ public:
   virtual OutputType EvaluateAtContinuousIndex( 
     const ContinuousIndexType & index ) const
     {
+    return EvaluateAtContinuousIndex(index, NULL);
+    }
+
+  virtual OutputType EvaluateAtContinuousIndex(
+    const ContinuousIndexType &index,
+    OutputType *grad) const
+    {
       // The bound variables for x, y, z
       int i0[VDim], i1[VDim];
 
       // Compute the ERF difference arrays
       for(size_t d = 0; d < VDim; d++)
-        compute_erf_array(dx[d], i0[d], i1[d], bb_start[d], nt[d], cut[d], index[d], sf[d], order[d]);
+        {
+        double *pdx = const_cast<double *>(dx[d].data_block());
+        double *pgx = grad ?  const_cast<double *>(gx[d].data_block()) : NULL;
+        compute_erf_array(pdx, i0[d], i1[d], bb_start[d], nt[d], cut[d], index[d], sf[d], pgx);
+        }
 
       // Get a pointer to the output value
       double sum_me = 0.0, sum_m = 0.0;
+      vnl_vector_fixed<double, VDim> dsum_me(0.0), dsum_m(0.0), dw;
 
       // Loop over the voxels in the region identified
       ImageRegion<VDim> region;
@@ -138,24 +152,54 @@ public:
         ImageRegionConstIteratorWithIndex<InputImageType> it(this->GetInputImage(), region);
         !it.IsAtEnd(); ++it)
         {
-        double w = 1.0;
-        for(size_t d = 0; d < VDim; d++)
+        size_t j = it.GetIndex()[0];
+        double w = dx[0][j];
+        if(grad) 
           {
-          w *= dx[d][it.GetIndex()[d]];
+          dw[0] = gx[0][j];
+          for(size_t d = 1; d < VDim; d++) dw[d] = dx[0][j];
           }
-        sum_me += w * it.Get();
+        for(size_t d = 1; d < VDim; d++)
+          {
+          j = it.GetIndex()[d];
+          w *= dx[d][j];
+          if(grad)
+            {
+            for(size_t q = 0; q < VDim; q++)
+              dw[q] *= (d == q) ? gx[d][j] : dx[d][j];
+            } 
+          }
+        
+        double V = it.Get();
+        sum_me += V * w;
         sum_m += w;
+        if(grad)
+          {
+          for(size_t q = 0; q < VDim; q++)
+            {
+            dsum_me[q] += V * dw[q];
+            dsum_m[q] += dw[q];
+            }
+          }
         }
 
-      return sum_me / sum_m;
+      double rc = sum_me / sum_m;
+      if(grad)
+        {
+        for(size_t q = 0; q < VDim; q++)
+          {
+          grad[q] = (dsum_me[q] - rc * dsum_m[q]) / sum_m;
+          grad[q] /= -1.4142135623730951 * sigma[q];
+          }
+        }
+
+      // return sum_me / sum_m;
+      return rc;
+
     }
 
 protected:
-  GaussianInterpolateImageFunction()
-    {
-    for(size_t i = 0; i < VDim; i++)
-      order[i] = 0.0;
-    }
+  GaussianInterpolateImageFunction() {}
   ~GaussianInterpolateImageFunction(){};
   void PrintSelf(std::ostream& os, Indent indent) const
     { this->Superclass::PrintSelf(os,indent); }
@@ -167,33 +211,21 @@ private:
   /** Number of neighbors used in the interpolation */
   static const unsigned long  m_Neighbors;  
 
-
-  double bb_start[VDim], bb_end[VDim], *dx[VDim], sf[VDim], cut[VDim];
+  vnl_vector<double> dx[VDim], gx[VDim];
+  double bb_start[VDim], bb_end[VDim], sf[VDim], cut[VDim];
   int nt[VDim], stride[VDim];
   double sigma[VDim], alpha;
 
-  OrderType order;
-
-  double erf_deriv(double t, int order) const
-    {
-    if(order == 0)
-      return erf(t);
-    if(order == 1)
-      return 1.128379167095513 * exp(- t * t);
-    if(order == 2)
-      return -2.256758334191025 * exp(- t * t);
-    return 0;
-    }
-
   void compute_erf_array (
-    double *dx_erf,         // The output array of erf(p+i+1) - erf(p+i)
-    int &k0, int &k1,       // The range of integration 0 <= k0 < k1 <= n
-    double b,               // Lower bound of the bounding box
-    int n,                  // Size of the bounding box in steps
-    double cut,             // The distance at which to cut off
-    double p,               // the value p
-    double sfac,            // scaling factor 1 / (Sqrt[2] sigma)
-    int order = 0) const      
+    double *dx_erf,               // The output array of erf(p+i+1) - erf(p+i)
+    int &k0, int &k1,             // The range of integration 0 <= k0 < k1 <= n
+    double b,                     // Lower bound of the bounding box
+    int n,                        // Size of the bounding box in steps
+    double cut,                   // The distance at which to cut off
+    double p,                     // the value p
+    double sfac,                  // scaling factor 1 / (Sqrt[2] sigma)
+    double *gx_erf = NULL         // Output derivative/erf array (optional)
+    ) const      
       {
       // Determine the range of voxels along the line where to evaluate erf
       k0 = (int) floor(p - b - cut);
@@ -203,12 +235,19 @@ private:
 
       // Start at the first voxel
       double t = (b - p + k0) * sfac;
-      double e_last = erf_deriv(t, order);
+      double e_last = erf(t);
+      double g_last = gx_erf ? 1.128379167095513 * exp(- t * t) : 0.0;
       for(int i = k0; i < k1; i++)
         {
         t += sfac;
-        double e_now = erf_deriv(t, order);
+        double e_now = erf(t);
         dx_erf[i] = e_now - e_last;
+        if(gx_erf)
+          {
+          double g_now = 1.128379167095513 * exp(- t * t);
+          gx_erf[i] = g_now - g_last;
+          g_last = g_now;
+          }
         e_last = e_now;
         }
       }

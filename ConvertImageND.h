@@ -102,7 +102,14 @@ private:
   // Read vectors, etc from command line
   SizeType ReadSizeVector(const char *vec);
   IndexType ReadIndexVector(const char *vec);
-  RealVector ReadRealVector(const char *vec);
+  RealVector ReadRealVector(const char *vec, bool is_point);
+  RealVector ReadRealSize(const char *vec)
+    {
+    RealVector x = ReadRealVector(vec, false);
+    for(size_t d = 0; d < VDim; d++)
+      x[d] = fabs(x[d]);
+    return x;
+    }
   TPixel ReadIntensityValue(const char *vec);
 
   // Templated write function

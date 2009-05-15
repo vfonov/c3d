@@ -32,7 +32,6 @@
 #include "SampleImage.h"
 #include "ScaleShiftImage.h"
 #include "SignedDistanceTransform.h"
-#include "SimpleElasticRegistration.h"
 #include "SmoothImage.h"
 #include "SplitMultilabelImage.h"
 #include "StapleAlgorithm.h"
@@ -173,7 +172,7 @@ ImageConverter<TPixel, VDim>
   else if(cmd == "-create")
     {
     SizeType dims = ReadSizeVector(argv[1]);
-    RealVector voxel = ReadRealVector(argv[2]);
+    RealVector voxel = ReadRealSize(argv[2]);
     CreateImage<TPixel, VDim> adapter(this);
     adapter(dims, voxel);
     return 2;
@@ -195,14 +194,6 @@ ImageConverter<TPixel, VDim>
     MultiplyImages<TPixel, VDim> multiply(this);
     multiply();
 
-    return 0;
-    }
-
-  else if(cmd == "-elastic")
-    {
-    // Perform very simple elastic registration
-    SimpleElasticRegistration<TPixel, VDim> elastic(this);
-    elastic();
     return 0;
     }
 
@@ -337,16 +328,9 @@ ImageConverter<TPixel, VDim>
       }
     else if(m_Interpolation == "gaussian")
       {
-      RealVector sigma = ReadRealVector(argv[2]);
+      RealVector sigma = ReadRealSize(argv[2]);
       adapter.CreateGaussian(sigma);
       return 2;
-      }
-    else if(m_Interpolation == "gaussjet" || m_Interpolation == "gaussian_jet")
-      {
-      RealVector sigma = ReadRealVector(argv[2]);
-      IndexType dir = ReadIndexVector(argv[3]);
-      adapter.CreateGaussianJet(sigma, dir);
-      return 3;
       }
     else
       {
@@ -513,7 +497,7 @@ ImageConverter<TPixel, VDim>
 
   else if(cmd == "-origin")
     {
-    RealVector org = ReadRealVector(argv[1]);
+    RealVector org = ReadRealVector(argv[1], true);
     m_ImageStack.back()->SetOrigin(org.data_block());
     return 1;
     }
@@ -582,7 +566,7 @@ ImageConverter<TPixel, VDim>
   else if(cmd == "-probe")
     {
     // Get the probe point
-    RealVector x = ReadRealVector(argv[1]);
+    RealVector x = ReadRealVector(argv[1], true);
     SampleImage<TPixel, VDim> adapter(this);
     adapter(x);
     return 1;
@@ -659,7 +643,7 @@ ImageConverter<TPixel, VDim>
 
   else if(cmd == "-resample-mm")
     {
-    RealVector vox = ReadRealVector(argv[1]);
+    RealVector vox = ReadRealSize(argv[1]);
     SizeType sz = m_ImageStack.back()->GetBufferedRegion().GetSize();
     for(size_t i = 0; i < VDim; i++)
       {
@@ -725,7 +709,7 @@ ImageConverter<TPixel, VDim>
   // Gaussian smoothing command
   else if(cmd == "-smooth")
     {
-    RealVector stdev = ReadRealVector(argv[1]);
+    RealVector stdev = ReadRealSize(argv[1]);
     SmoothImage<TPixel, VDim> adapter(this);
     adapter(stdev);
     return 1;
@@ -788,11 +772,24 @@ ImageConverter<TPixel, VDim>
   else if(cmd == "-trim")
     {
     // Read the size of the wrap region
-    RealVector margin = ReadRealVector(argv[1]);
+    RealVector margin = ReadRealSize(argv[1]);
 
     // Trim the image accordingly
     TrimImage<TPixel, VDim> adapter(this);
-    adapter(margin);
+    adapter(margin, TrimImage<TPixel, VDim>::SPECIFY_MARGIN);
+
+    // Return the number of arguments consumed
+    return 1;
+    }
+
+  else if(cmd == "-trim-to-size")
+    {
+    // Read the size of the trim region
+    RealVector size = ReadRealSize(argv[1]);
+
+    // Trim the image accordingly
+    TrimImage<TPixel, VDim> adapter(this);
+    adapter(size, TrimImage<TPixel, VDim>::SPECIFY_FINALSIZE);
 
     // Return the number of arguments consumed
     return 1;
@@ -861,7 +858,7 @@ ImageConverter<TPixel, VDim>
   // Warp label image
   else if(cmd == "-warp-label" || cmd=="-warplabel" || cmd=="-wl")
     { 
-    RealVector stdev = ReadRealVector(argv[1]);
+    RealVector stdev = ReadRealSize(argv[1]);
     WarpLabelImage<TPixel, VDim> adapter(this);
     adapter(stdev);
     return 1;
@@ -881,6 +878,9 @@ int
 ImageConverter<TPixel, VDim>
 ::ProcessCommandLine(int argc, char *argv[])
 {
+  // Disable multithreading
+  itk::MultiThreader::SetGlobalDefaultNumberOfThreads(1);
+
   // Check the number of arguments
   if(argc == 1)
     {
@@ -944,10 +944,12 @@ bool str_ends_with(const std::string &s, const std::string &pattern)
   return(ipos == s.size() - pattern.size());
 }
 
+
+
 template<class TPixel, unsigned int VDim>
 typename ImageConverter<TPixel, VDim>::RealVector
 ImageConverter<TPixel, VDim>
-::ReadRealVector(const char *vec_in)
+::ReadRealVector(const char *vec_in, bool is_point)
 {
   // Create a copy of the input string
   char *vec = new char[strlen(vec_in)];
@@ -959,17 +961,15 @@ ImageConverter<TPixel, VDim>
   RealVector x, scale, offset;
 
   // Check the type of the vector
+  bool phys;
   if(str_ends_with(vec,"mm")) 
     {
-    scale.fill(1.0);
-    offset.fill(0.0);
+    phys = true;
     }
   else if(str_ends_with(vec,"vox"))
-    for(i = 0; i < VDim; i++)
-      {
-      scale[i] = m_ImageStack.back()->GetSpacing()[i];
-      offset[i] = m_ImageStack.back()->GetOrigin()[i];
-      }
+    {
+    phys = false;
+    }
   else 
     throw ConvertException(
       "Invalid vector spec %s (does not end with 'mm' or 'vox')", vec_in);
@@ -989,11 +989,23 @@ ImageConverter<TPixel, VDim>
     throw ConvertException(
       "Invalid vector spec %s (must have 1 or %i components)", vec_in, VDim);
 
-  // Scale the vector
-  for(i = 0; i < VDim; i++)
+  // If the vector is in vox units, map it to physical units
+  if(!phys)
     {
-    x[i] *= scale[i];
-    x[i] += offset[i];
+    // Get the matrix
+    typename ImageType::TransformMatrixType MP = 
+      m_ImageStack.back()->GetVoxelSpaceToRASPhysicalSpaceMatrix();
+
+    // Create the vector to multiply by
+    vnl_vector_fixed<double, VDim+1> X, XP;
+    for(size_t d = 0; d < VDim; d++)
+      X[d] = x[d];
+    X[VDim] = is_point ? 1.0 : 0.0;
+
+    // Apply matrix
+    XP = MP * X;
+    for(size_t d = 0; d < VDim; d++)
+      x[d] = XP[d];
     }
 
   delete vec;

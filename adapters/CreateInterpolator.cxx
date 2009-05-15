@@ -53,18 +53,6 @@ CreateInterpolator<TPixel, VDim>
   c->SetInterpolator(gi);
 }
 
-template <class TPixel, unsigned int VDim>
-void
-CreateInterpolator<TPixel, VDim>
-::CreateGaussianJet(RealVector sigma, IndexType order)
-{
-  typedef itk::GaussianInterpolateImageFunction<ImageType, double> GaussianInterpolatorType;
-  typename GaussianInterpolatorType::Pointer gi = GaussianInterpolatorType::New();
-  gi->SetParameters(sigma.data_block(), 4.0);
-  gi->SetDerivativeOrder(order);
-  c->SetInterpolator(gi);
-}
-
 // Invocations
 template class CreateInterpolator<double, 2>;
 template class CreateInterpolator<double, 3>;
