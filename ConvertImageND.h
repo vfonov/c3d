@@ -97,6 +97,7 @@ public:
 private:
 
   // Internal functions
+  void PrintCommandListing();
   int ProcessCommand(int argc, char *argv[]);
 
   // Read vectors, etc from command line

@@ -81,6 +81,94 @@ ImageConverter<TPixel,VDim>
 }
 
 template<class TPixel, unsigned int VDim>
+void
+ImageConverter<TPixel, VDim>
+::PrintCommandListing()
+{
+  cout << "Command Listing: " << endl;
+  cout << "    -add" << endl;
+  cout << "    -anisotropic-diffusion, -ad" << endl;
+  cout << "    -antialias, -alias" << endl;
+  cout << "    -as, -set" << endl;
+  cout << "    -background" << endl;
+  cout << "    -binarize" << endl;
+  cout << "    -connected-components, -connected, -comp" << endl;
+  cout << "    -clear" << endl;
+  cout << "    -clip" << endl;
+  cout << "    -copy-transform, -ct" << endl;
+  cout << "    -create" << endl;
+  cout << "    -dilate" << endl;
+  cout << "    -divide" << endl;
+  cout << "    -endfor" << endl;
+  cout << "    -erode" << endl;
+  cout << "    -erf" << endl;
+  cout << "    -exp" << endl;
+  cout << "    -fft" << endl;
+  cout << "    -foreach" << endl;
+  cout << "    -glm" << endl;
+  cout << "    -histmatch, -histogram-match" << endl;
+  cout << "    -info" << endl;
+  cout << "    -info-full" << endl;
+  cout << "    -insert, -ins" << endl;
+  cout << "    -interpolation, -interp, -int" << endl;
+  cout << "    -iterations" << endl;
+  cout << "    -label-statistics, -lstat" << endl;
+  cout << "    -laplacian, -laplace" << endl;
+  cout << "    -levelset" << endl;
+  cout << "    -levelset-curvature" << endl;
+  cout << "    -levelset-advection" << endl;
+  cout << "    -ln, -log" << endl;
+  cout << "    -log10" << endl;
+  cout << "    -mean" << endl;
+  cout << "    -merge" << endl;
+  cout << "    -mi, -mutual-info" << endl;
+  cout << "    -mixture, -mixture-model" << endl;
+  cout << "    -multiply, -times" << endl;
+  cout << "    -nmi, -normalized-mutual-info" << endl;
+  cout << "    -normpdf" << endl;
+  cout << "    -noround" << endl;
+  cout << "    -nospm" << endl;
+  cout << "    -o" << endl;
+  cout << "    -origin" << endl;
+  cout << "    -overlap" << endl;
+  cout << "    -pad" << endl;
+  cout << "    -pixel" << endl;
+  cout << "    -pop" << endl;
+  cout << "    -popas" << endl;
+  cout << "    -probe" << endl;
+  cout << "    -push, -get" << endl;
+  cout << "    -reciprocal" << endl;
+  cout << "    -region" << endl;
+  cout << "    -replace" << endl;
+  cout << "    -resample" << endl;
+  cout << "    -resample-mm" << endl;
+  cout << "    -reslice-itk" << endl;
+  cout << "    -reslice-matrix" << endl;
+  cout << "    -reslice-identity" << endl;
+  cout << "    -rms" << endl;
+  cout << "    -round" << endl;
+  cout << "    -scale" << endl;
+  cout << "    -shift" << endl;
+  cout << "    -signed-distance-transform, -sdt" << endl;
+  cout << "    -smooth" << endl;
+  cout << "    -split" << endl;
+  cout << "    -sqrt" << endl;
+  cout << "    -staple" << endl;
+  cout << "    -spm" << endl;
+  cout << "    -stretch" << endl;
+  cout << "    -threshold, -thresh" << endl;
+  cout << "    -trim" << endl;
+  cout << "    -trim-to-size" << endl;
+  cout << "    -type" << endl;
+  cout << "    -verbose" << endl;
+  cout << "    -vote" << endl;
+  cout << "    -vote-label" << endl;
+  cout << "    -voxel-sum" << endl;
+  cout << "    -voxel-integral, -voxel-int" << endl;
+  cout << "    -warp" << endl;
+}
+
+template<class TPixel, unsigned int VDim>
 int
 ImageConverter<TPixel, VDim>
 ::ProcessCommand(int argc, char *argv[])
@@ -252,6 +340,13 @@ ImageConverter<TPixel, VDim>
     adapter(mat, con);
     return 2;
     }
+
+  else if (cmd == "-h")
+    {
+    PrintCommandListing();
+    return 0;
+    }
+
 
   else if(cmd == "-histmatch" || cmd == "-histogram-match")
     {
@@ -885,9 +980,10 @@ ImageConverter<TPixel, VDim>
   if(argc == 1)
     {
     cerr << "PICSL convert3d tool" << endl;
-    cerr << "For documentation and usage examples, see" << endl;
-    cerr << "    http://alliance.seas.upenn.edu/~pauly2/wiki/index.php" 
-      << "?n=Main.Convert3DTool" << endl;
+    cerr << "For full documentation and usage examples, see" << endl;
+    cerr << "    http://www.itksnap.org/pmwiki/pmwiki.php?n=Convert3D.Documentation" << endl;
+    cerr << "For a brief summary of commands, call" << endl;
+    cerr << "    " << argv[0] << " -h" << endl;
     return -1;
     }
 
