@@ -82,8 +82,7 @@ SET(SOURCES
   adapters/WarpImage.cxx
   adapters/WarpLabelImage.cxx
   adapters/WriteImage.cxx
-  ConvertImageND.cxx
-  adapters/cg_descent.c)
+  ConvertImageND.cxx)
 
 # Pull in FFTW
 FIND_LIBRARY(FFTW_LIB fftw3f)
