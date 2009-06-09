@@ -1,7 +1,7 @@
 #include "GeneralLinearModel.h"
 #include "vnl/vnl_file_matrix.h"
 #include "vnl/vnl_rank.h"
-#include "vnl/vnl_inverse.h"
+#include "vnl/algo/vnl_matrix_inverse.h"
 
 template <class TPixel, unsigned int VDim>
 void
@@ -31,8 +31,9 @@ GeneralLinearModel<TPixel, VDim>
   *c->verbose << "  contrast vector: " << con << endl;
 
   // Some matrices
-  vnl_matrix<double> A = vnl_inverse(mat.transpose() * mat);
-  vnl_matrix<double> Ax = A * mat.transpose();
+  size_t rank = vnl_rank(mat, vnl_rank_row);
+  vnl_matrix<double> A = 
+    vnl_matrix_inverse<double>(mat.transpose() * mat).pinverse(rank);
 
   // Load all images into a Y matrix (can we do this)
   size_t n = c->m_ImageStack.front()->GetBufferedRegion().GetNumberOfPixels();
