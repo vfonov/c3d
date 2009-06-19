@@ -99,6 +99,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -create" << endl;
   cout << "    -dilate" << endl;
   cout << "    -divide" << endl;
+  cout << "    -dup" << endl;
   cout << "    -endfor" << endl;
   cout << "    -erode" << endl;
   cout << "    -erf" << endl;
@@ -282,6 +283,12 @@ ImageConverter<TPixel, VDim>
     MultiplyImages<TPixel, VDim> multiply(this);
     multiply();
 
+    return 0;
+    }
+
+  else if(cmd == "-dup" || cmd == "-duplicate")
+    {
+    m_ImageStack.push_back(m_ImageStack.back());
     return 0;
     }
 
@@ -807,6 +814,13 @@ ImageConverter<TPixel, VDim>
     RealVector stdev = ReadRealSize(argv[1]);
     SmoothImage<TPixel, VDim> adapter(this);
     adapter(stdev);
+    return 1;
+    }
+
+  else if(cmd == "-spacing")
+    {
+    RealVector org = ReadRealSize(argv[1]);
+    m_ImageStack.back()->SetSpacing(org.data_block());
     return 1;
     }
 

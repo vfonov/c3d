@@ -15,6 +15,7 @@ function _c3d()
   opts="$opts -create"
   opts="$opts -dilate"
   opts="$opts -divide"
+  opts="$opts -dup -duplicate"
   opts="$opts -endfor"
   opts="$opts -erode"
   opts="$opts -erf"
