@@ -9,7 +9,7 @@ endif(COMMAND cmake_policy)
 # Versioning information
 SET(C3D_VERSION_MAJOR 0)
 SET(C3D_VERSION_MINOR 8)
-SET(C3D_VERSION_PATCH 0)
+SET(C3D_VERSION_PATCH 2)
 SET(C3D_VERSION_FULL "${C3D_VERSION_MAJOR}.${C3D_VERSION_MINOR}.${C3D_VERSION_PATCH}")
 
 # Include directories
@@ -34,6 +34,17 @@ ELSE(ITK_FOUND)
   MESSAGE(FATAL_ERROR
     "Cannot build without ITK.  Please set ITK_DIR.")
 ENDIF(ITK_FOUND)  
+
+# Get Boost (for regex and whatever else)
+FIND_PACKAGE(BOOST)
+IF(Boost_FOUND)
+  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+  LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+  LINK_LIBRARIES(boost_regex)
+ELSE(Boost_FOUND)
+  MESSAGE(FATAL_ERROR
+    "Cannot build without Boost. Please set Boost_INCLUDE_DIR")
+ENDIF(Boost_FOUND)
 
 IF(WIN32)
   ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
@@ -82,7 +93,8 @@ SET(SOURCES
   adapters/WarpImage.cxx
   adapters/WarpLabelImage.cxx
   adapters/WriteImage.cxx
-  ConvertImageND.cxx)
+  ConvertImageND.cxx
+  ${CONVERT3D_BINARY_DIR}/ConvertImageVersion.cxx)
 
 # Pull in FFTW
 FIND_LIBRARY(FFTW_LIB fftw3f)
@@ -90,6 +102,11 @@ FIND_LIBRARY(FFTW_LIB fftw3f)
 # Define the ITK libraries
 SET(ITK_LIBRARIES
   ITKNumerics ITKIO ITKCommon ITKBasicFilters ITKStatistics ITKAlgorithms)
+
+# Configure the version file
+CONFIGURE_FILE(
+  ${CONVERT3D_SOURCE_DIR}/ConvertImageVersion.cxx.in
+  ${CONVERT3D_BINARY_DIR}/ConvertImageVersion.cxx @ONLY IMMEDIATE)
 
 # Get the extra stuff compiled
 SUBDIRS(itkextras)

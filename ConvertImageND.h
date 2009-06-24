@@ -131,7 +131,7 @@ private:
 
   // Label set for split/merge
   LabelSet m_SplitLabelSet;
-
+  
 public:
 
   // Stack of images from the command line

@@ -1,5 +1,8 @@
 #include "ConvertImageND.h"
 
+// We are using boost for command line parameter checking
+#include <boost/regex.hpp>
+
 #include "AddImages.h"
 #include "AntiAliasImage.h"
 #include "ApplyMetric.h"
@@ -46,6 +49,8 @@
 
 #include <cstring>
 #include <algorithm>
+
+extern const char *ImageConverter_VERSION_STRING;
 
 // Helper function: read a double, throw exception if unreadable
 double myatof(char *str)
@@ -152,6 +157,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -shift" << endl;
   cout << "    -signed-distance-transform, -sdt" << endl;
   cout << "    -smooth" << endl;
+  cout << "    -spacing" << endl;
   cout << "    -split" << endl;
   cout << "    -sqrt" << endl;
   cout << "    -staple" << endl;
@@ -162,6 +168,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -trim-to-size" << endl;
   cout << "    -type" << endl;
   cout << "    -verbose" << endl;
+  cout << "    -version" << endl;
   cout << "    -vote" << endl;
   cout << "    -vote-label" << endl;
   cout << "    -voxel-sum" << endl;
@@ -597,6 +604,19 @@ ImageConverter<TPixel, VDim>
     return 1;
     }
 
+  else if(cmd == "-orient")
+    {
+    // Read an RAS code
+    boost::regex re;
+    re.assign("[RASLPI]{3}", boost::regex_constants::icase);
+    if(boost::regex_match(argv[1], re))
+      { cout << "You supplied a RAS code" << endl; }
+    else
+      { cout << "I am expecting a matrix" << endl; }
+    return 1;
+    }
+
+
   else if(cmd == "-origin")
     {
     RealVector org = ReadRealVector(argv[1], true);
@@ -916,6 +936,12 @@ ImageConverter<TPixel, VDim>
   // Verbose mode
   else if(cmd == "-verbose")
     { verbose = &std::cout; return 0; }
+  
+  else if(cmd == "-version")
+    { 
+    cout << "Version " << ImageConverter_VERSION_STRING << endl;
+    return 0;
+    }
 
   else if(cmd == "-vote")
     {
@@ -1054,53 +1080,74 @@ bool str_ends_with(const std::string &s, const std::string &pattern)
   return(ipos == s.size() - pattern.size());
 }
 
+// How the specification is made
+enum VecSpec { PHYSICAL, VOXELS, PERCENT, NONE };
 
+template<unsigned int VDim>
+void ReadVecSpec(const char *vec_in, vnl_vector_fixed<double,VDim> &vout, VecSpec &type)
+{
+  // Set up the regular expressions for numerical string parsing
+  boost::regex re1(
+    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)(mm|vox|%)?", 
+    boost::regex_constants::icase);
+  boost::regex re2(
+    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)x"
+    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)(mm|vox|%)?", 
+    boost::regex_constants::icase);
+  boost::regex re3(
+    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)x"
+    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)x"
+    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)(mm|vox|%)?", 
+    boost::regex_constants::icase);
+  boost::cmatch match;
+
+  // Check if it's a single-component specification
+  if(boost::regex_match(vec_in, match, re1))
+    {
+    vout.fill(atof(match[1].str().c_str()));
+    }
+  else if(VDim == 2 && boost::regex_match(vec_in, match, re2))
+    {
+    vout[0] = atof(match[1].str().c_str());
+    vout[1] = atof(match[3].str().c_str());
+    }
+  else if(VDim == 3 && boost::regex_match(vec_in, match, re3))
+    {
+    vout[0] = atof(match[1].str().c_str());
+    vout[1] = atof(match[3].str().c_str());
+    vout[2] = atof(match[5].str().c_str());
+    }
+  else throw ConvertException("Invalid vector specification %s", vec_in);
+ 
+  // Get the type of spec. Luckily, all suffixes have the same length
+  switch(match[match.size()-1].length()) {
+  case 0: type = NONE; break;
+  case 1: type = PERCENT; break;
+  case 2: type = PHYSICAL; break;
+  case 3: type = VOXELS; break;
+  default: throw ConvertException("Internal error in VecSpec code");
+  }
+}
 
 template<class TPixel, unsigned int VDim>
 typename ImageConverter<TPixel, VDim>::RealVector
 ImageConverter<TPixel, VDim>
 ::ReadRealVector(const char *vec_in, bool is_point)
 {
-  // Create a copy of the input string
-  char *vec = new char[strlen(vec_in)];
-  strcpy(vec, vec_in);
-
-  size_t i;
-
   // Output vector
   RealVector x, scale, offset;
+  VecSpec type;
+
+  // Read the vector
+  ReadVecSpec(vec_in, x, type);
 
   // Check the type of the vector
-  bool phys;
-  if(str_ends_with(vec,"mm")) 
-    {
-    phys = true;
-    }
-  else if(str_ends_with(vec,"vox"))
-    {
-    phys = false;
-    }
-  else 
+  if(type != VOXELS && type != PHYSICAL)
     throw ConvertException(
-      "Invalid vector spec %s (does not end with 'mm' or 'vox')", vec_in);
+      "Invalid vector spec %s (must end with 'mm' or 'vox')", vec_in);
   
-  // Find all the 'x' in the string
-  char *tok = strtok(vec, "xmvo");
-  for(i = 0; i < VDim && tok != NULL; i++)
-    {
-    x[i] = atof(tok);
-    tok = strtok(NULL, "xmvo");
-    } 
-
-  // Check if there is only one number
-  if(i == 1)
-    x.fill(x[0]);
-  else if(i != VDim)
-    throw ConvertException(
-      "Invalid vector spec %s (must have 1 or %i components)", vec_in, VDim);
-
   // If the vector is in vox units, map it to physical units
-  if(!phys)
+  if(type == VOXELS)
     {
     // Get the matrix
     typename ImageType::TransformMatrixType MP = 
@@ -1118,7 +1165,6 @@ ImageConverter<TPixel, VDim>
       x[d] = XP[d];
     }
 
-  delete vec;
   return x;
 }
 
