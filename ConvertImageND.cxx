@@ -585,7 +585,7 @@ ImageConverter<TPixel, VDim>
 
     // Scale by factor
     ScaleShiftImage<TPixel, VDim> scale3(this);
-    scale3(1.0 / sqrt(2 * M_PI * s * s), 0.0);
+	scale3(1.0 / sqrt(2 * vnl_math::pi * s * s), 0.0);
     }
 
   else if(cmd == "-noround")

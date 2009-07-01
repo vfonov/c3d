@@ -3,8 +3,8 @@
   Program:   Insight Segmentation & Registration Toolkit
   Module:    $RCSfile: itkGaussianInterpolateImageFunction.h,v $
   Language:  C++
-  Date:      $Date: 2009/05/15 20:04:12 $
-  Version:   $Revision: 1.4 $
+  Date:      $Date: 2009/07/01 12:59:34 $
+  Version:   $Revision: 1.5 $
 
   Copyright (c) Insight Software Consortium. All rights reserved.
   See ITKCopyright.txt or http://www.itk.org/HTML/Copyright.htm for details.
@@ -18,6 +18,7 @@
 #define __itkGaussianInterpolateImageFunction_h
 
 #include "itkInterpolateImageFunction.h"
+#include "vnl/vnl_erf.h"
 
 namespace itk
 {
@@ -235,12 +236,12 @@ private:
 
       // Start at the first voxel
       double t = (b - p + k0) * sfac;
-      double e_last = erf(t);
+      double e_last = vnl_erf(t);
       double g_last = gx_erf ? 1.128379167095513 * exp(- t * t) : 0.0;
       for(int i = k0; i < k1; i++)
         {
         t += sfac;
-        double e_now = erf(t);
+        double e_now = vnl_erf(t);
         dx_erf[i] = e_now - e_last;
         if(gx_erf)
           {
