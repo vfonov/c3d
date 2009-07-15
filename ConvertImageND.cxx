@@ -73,6 +73,7 @@ ImageConverter<TPixel,VDim>
   m_Background = 0.0;
   m_RoundFactor = 0.5;
   m_FlagSPM = false;
+  m_MultiComponentSplit = false;
   m_AntiAliasRMS = 0.07;
   m_Iterations = 0;
   m_InLoop = false;
@@ -125,6 +126,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -levelset-advection" << endl;
   cout << "    -ln, -log" << endl;
   cout << "    -log10" << endl;
+  cout << "    -mcs, -multicomponent-split" << endl;
   cout << "    -mean" << endl;
   cout << "    -merge" << endl;
   cout << "    -mi, -mutual-info" << endl;
@@ -135,6 +137,8 @@ ImageConverter<TPixel, VDim>
   cout << "    -noround" << endl;
   cout << "    -nospm" << endl;
   cout << "    -o" << endl;
+  cout << "    -omc, -output-multicomponent" << endl;
+  cout << "    -oo, -output-multiple" << endl;
   cout << "    -origin" << endl;
   cout << "    -overlap" << endl;
   cout << "    -pad" << endl;
@@ -500,6 +504,11 @@ ImageConverter<TPixel, VDim>
     return 0;
     }
 
+  else if(cmd == "-mcs" || cmd == "-multicomponent-split")
+    {
+    m_MultiComponentSplit = true; return 0;
+    }
+
   else if(cmd == "-mean")
     {
     size_t n = m_ImageStack.size();
@@ -560,6 +569,11 @@ ImageConverter<TPixel, VDim>
     return 0;
     }
 
+  else if(cmd == "-nomcs" || cmd == "-no-multicomponent-split")
+    {
+    m_MultiComponentSplit = false; return 0;
+    }
+
   else if(cmd == "-normpdf")
     {
     // Compute normal PDF of intensity values given sigma and mu
@@ -597,11 +611,72 @@ ImageConverter<TPixel, VDim>
 
   // Overwrite / Output command - save the image without checking if
   // it already exists.
-  else if(cmd == "-o")
+  else if(cmd == "-o" || cmd == "-output")
     {
     WriteImage<TPixel, VDim> adapter(this);
     adapter(argv[1], true);
     return 1;
+    }
+
+  else if(cmd == "-omc" || cmd == "-output-multicomponent")
+    {
+    // Number of components (all by default)
+    int nc, np;
+
+    // A parameter can be optionally specified (how many components)
+    boost::regex re("[0-9]+", boost::regex_constants::icase);
+    if(boost::regex_match(argv[1], re))
+      { nc = atoi(argv[1]); np=2; }
+    else
+      { nc = m_ImageStack.size(); np = 1; }
+
+    // Create a writer
+    WriteImage<TPixel, VDim> adapter(this);
+    adapter.WriteMultiComponent(argv[np], nc);
+    return np;
+    }
+
+  // Write mulptiple images
+  else if(cmd == "-oo" || cmd == "-output-multiple")
+    {
+    // Check if the argument is a printf pattern
+    char buffer[1024];
+    sprintf(buffer, argv[1],0);
+    if(strcmp(buffer, argv[1]))
+      {
+      // A pattern is specified. For each image on the stack, use pattern
+      for(size_t i = 0; i < m_ImageStack.size(); i++)
+        {
+        sprintf(buffer, argv[1], i);
+        WriteImage<TPixel, VDim> adapter(this);
+        adapter(buffer, true, i);
+        }
+      return 1;
+      }
+    else
+      {
+      // Filenames are specified. Find out how many there are
+      size_t nfiles = 0;
+      for(size_t i = 1; i < argc; i++)
+        {
+        if(argv[i][0] != '-') nfiles++; else break;
+        }
+
+
+      if(nfiles == 0)
+        throw ConvertException("No files specified to -oo command");
+      
+      if(nfiles > m_ImageStack.size())
+        throw ConvertException("Too many files specified to -oo command");
+
+      for(size_t j = 0; j < nfiles; j++)
+        {
+        WriteImage<TPixel, VDim> adapter(this);
+        adapter(argv[j+1], true, m_ImageStack.size() - nfiles + j);
+        }
+
+      return nfiles;
+      }
     }
 
   else if(cmd == "-orient")
@@ -1040,7 +1115,7 @@ ImageConverter<TPixel, VDim>
       if(cmd[0] == '-')
         {
         // A command has been supplied
-        i += ProcessCommand(argc-(i+1), argv+i);
+        i += ProcessCommand(argc-i, argv+i);
         }
       else
         {
@@ -1207,6 +1282,7 @@ ImageConverter<TPixel, VDim>
     size_t k = (size_t) (qtile * n);
     val = asort[k];
     delete asort;
+    *verbose << "Quantile " << qtile << " maps to " << val << endl;
     }
 
   return val;

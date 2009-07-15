@@ -152,6 +152,9 @@ public:
   // Whether SPM extensions are used
   bool m_FlagSPM;
 
+  // Whether multicomponent images are split on read
+  bool m_MultiComponentSplit;
+
   // Number of iterations for various algorithms
   size_t m_Iterations;
 

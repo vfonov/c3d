@@ -9,12 +9,15 @@ template<class TPixel, unsigned int VDim>
 template<class TOutPixel>
 void 
 WriteImage<TPixel, VDim>
-::TemplatedWriteImage(const char *file, double xRoundFactor)
+::TemplatedWriteImage(const char *file, double xRoundFactor, int pos)
 {
   // Get the input image
   if(c->m_ImageStack.size() == 0)
-    { cerr << "No data has been generated! Can't write to " << file << endl; throw -1; }
-  ImagePointer input = c->m_ImageStack.back();
+    throw ConvertException("No data has been generated! Can't write to %s", file);
+
+  // Get the image at the given position
+  if(pos < 0) pos = c->m_ImageStack.size() - 1;
+  ImagePointer input = c->m_ImageStack[pos];
   
   // Create the output image 
   typedef itk::OrientedRASImage<TOutPixel, VDim> OutputImageType;
@@ -27,10 +30,36 @@ WriteImage<TPixel, VDim>
   output->Allocate();
 
   // Describe what we are doing
-  *c->verbose << "Writing #" << c->m_ImageStack.size() << " to file " << file << endl;
+  *c->verbose << "Writing #" << pos+1 << " to file " << file << endl;
   *c->verbose << "  Output voxel type: " << c->m_TypeId << "[" << typeid(TOutPixel).name() << "]" << endl;
   *c->verbose << "  Rounding off: " << (xRoundFactor == 0.0 ? "Disabled" : "Enabled") << endl;
   
+  // Set the SPM originator header
+  MakeSPMOriginFix(input, output);
+
+  // Copy everything, rounding if the pixel type is integer
+  size_t n = input->GetBufferedRegion().GetNumberOfPixels();
+  for(size_t i = 0; i < n; i++)
+    output->GetBufferPointer()[i] = (TOutPixel) (input->GetBufferPointer()[i] + xRoundFactor);
+
+  // Write the image out
+  typedef itk::ImageFileWriter<OutputImageType> WriterType;
+  typename WriterType::Pointer writer = WriterType::New();
+  writer->SetInput(output);
+  writer->SetFileName(file);
+  try { writer->Update(); }
+  catch (itk::ExceptionObject &exc) {
+    cerr << "Error writing image to " << file << endl;
+    cerr << "ITK Exception: " << exc << endl;
+    throw -1;
+  }
+}
+
+template<class TPixel, unsigned int VDim>
+void 
+WriteImage<TPixel, VDim>
+::MakeSPMOriginFix(itk::ImageBase<VDim> *input, itk::ImageBase<VDim> *output)
+{
   // Set the SPM originator header
   if(c->m_FlagSPM)
     {
@@ -53,11 +82,55 @@ WriteImage<TPixel, VDim>
     itk::EncapsulateMetaData<string>(
       output->GetMetaDataDictionary(),itk::ITK_FileOriginator,originator);
     }
+}
+
+
+template<class TPixel, unsigned int VDim>
+template<class TOutPixel>
+void 
+WriteImage<TPixel, VDim>
+::TemplatedWriteMultiComponentImage(const char *file, double xRoundFactor, int pstart)
+{
+  size_t ncomp = c->m_ImageStack.size() - pstart;
+  if(ncomp <= 0)
+    throw ConvertException("No data has been generated! Can't write to %s", file);
+
+  // Get the top image on the stack (for reference information)
+  ImagePointer itop = c->m_ImageStack.back();
+
+  // Check compatibility
+  for(size_t i = 0; i < ncomp-1; i++)
+    if(c->m_ImageStack[pstart+i]->GetBufferedRegion().GetSize() != 
+      itop->GetBufferedRegion().GetSize())
+      {
+      throw ConvertException("Multicomponent output error: mismatch in image dimensions");
+      }
+
+  // Define the output image type
+  typedef itk::VectorImage<TOutPixel, VDim> OutputImageType;
+  typename OutputImageType::Pointer output = OutputImageType::New();
+  output->CopyInformation(itop);
+  output->SetRegions(itop->GetBufferedRegion());
+  output->SetNumberOfComponentsPerPixel(ncomp);
+  output->Allocate();
+
+  // Describe what we are doing
+  *c->verbose << "Writing Images" << pstart+1 << " to " << c->m_ImageStack.size() << " to multicomponent file " << file << endl;
+  *c->verbose << "  Output voxel type: " << c->m_TypeId << "[" << typeid(TOutPixel).name() << "]" << endl;
+  *c->verbose << "  Rounding off: " << (xRoundFactor == 0.0 ? "Disabled" : "Enabled") << endl;
+    
+  // Set the SPM originator header
+  MakeSPMOriginFix(itop, output);
 
   // Copy everything, rounding if the pixel type is integer
-  size_t n = input->GetBufferedRegion().GetNumberOfPixels();
-  for(size_t i = 0; i < n; i++)
-    output->GetBufferPointer()[i] = (TOutPixel) (input->GetBufferPointer()[i] + xRoundFactor);
+  size_t n = itop->GetBufferedRegion().GetNumberOfPixels();
+  for(size_t j = 0; j < ncomp; j++)
+    {
+    TPixel *buf = c->m_ImageStack[pstart+j]->GetBufferPointer();
+    TOutPixel *out = output->GetBufferPointer() + j;
+    for(size_t i = 0; i < n; i++, buf++, out+=ncomp)
+      *out = (TOutPixel) (*buf + xRoundFactor);
+    }
 
   // Write the image out
   typedef itk::ImageFileWriter<OutputImageType> WriterType;
@@ -65,17 +138,46 @@ WriteImage<TPixel, VDim>
   writer->SetInput(output);
   writer->SetFileName(file);
   try { writer->Update(); }
-  catch (itk::ExceptionObject &exc) {
-    cerr << "Error writing image to " << file << endl;
-    cerr << "ITK Exception: " << exc << endl;
-    throw -1;
-  }
+  catch (itk::ExceptionObject &exc) 
+    {
+    throw ConvertException("Error writing image to %s\nITK Exception: %s", file, exc.GetDescription());
+    }
 }
 
 template <class TPixel, unsigned int VDim>
 void
 WriteImage<TPixel, VDim>
-::operator() (const char *file, bool force)
+::WriteMultiComponent(const char *file, int ncomp)
+{
+  // Get the position of the first image to include
+  int pos = c->m_ImageStack.size() - ncomp;
+
+  if(c->m_TypeId == "char" || c->m_TypeId == "byte")
+    TemplatedWriteMultiComponentImage<char>(file, c->m_RoundFactor, pos);
+  if(c->m_TypeId == "uchar" || c->m_TypeId == "ubyte")
+    TemplatedWriteMultiComponentImage<unsigned char>(file, c->m_RoundFactor, pos);
+  
+  if(c->m_TypeId == "short") 
+    TemplatedWriteMultiComponentImage<short>(file, c->m_RoundFactor, pos);
+  if(c->m_TypeId == "ushort")
+    TemplatedWriteMultiComponentImage<unsigned short>(file, c->m_RoundFactor, pos);
+
+  if(c->m_TypeId == "int") 
+    TemplatedWriteMultiComponentImage<int>(file, c->m_RoundFactor, pos);
+  if(c->m_TypeId == "uint")
+    TemplatedWriteMultiComponentImage<unsigned int>(file, c->m_RoundFactor, pos);
+
+  if(c->m_TypeId == "float") 
+    TemplatedWriteMultiComponentImage<float>(file, 0.0, pos);
+  if(c->m_TypeId == "double")
+    TemplatedWriteMultiComponentImage<double>(file, 0.0, pos);
+}
+
+
+template <class TPixel, unsigned int VDim>
+void
+WriteImage<TPixel, VDim>
+::operator() (const char *file, bool force, int pos)
 {
   // Unless in 'force' mode, check if the image already exists
   if(!force && itksys::SystemTools::FileExists(file))
@@ -85,26 +187,27 @@ WriteImage<TPixel, VDim>
     }
 
   if(c->m_TypeId == "char" || c->m_TypeId == "byte")
-    TemplatedWriteImage<char>(file, c->m_RoundFactor);
+    TemplatedWriteImage<char>(file, c->m_RoundFactor, pos);
   if(c->m_TypeId == "uchar" || c->m_TypeId == "ubyte")
-    TemplatedWriteImage<unsigned char>(file, c->m_RoundFactor);
+    TemplatedWriteImage<unsigned char>(file, c->m_RoundFactor, pos);
   
   if(c->m_TypeId == "short") 
-    TemplatedWriteImage<short>(file, c->m_RoundFactor);
+    TemplatedWriteImage<short>(file, c->m_RoundFactor, pos);
   if(c->m_TypeId == "ushort")
-    TemplatedWriteImage<unsigned short>(file, c->m_RoundFactor);
+    TemplatedWriteImage<unsigned short>(file, c->m_RoundFactor, pos);
 
   if(c->m_TypeId == "int") 
-    TemplatedWriteImage<int>(file, c->m_RoundFactor);
+    TemplatedWriteImage<int>(file, c->m_RoundFactor, pos);
   if(c->m_TypeId == "uint")
-    TemplatedWriteImage<unsigned int>(file, c->m_RoundFactor);
+    TemplatedWriteImage<unsigned int>(file, c->m_RoundFactor, pos);
 
   if(c->m_TypeId == "float") 
-    TemplatedWriteImage<float>(file, 0.0);
+    TemplatedWriteImage<float>(file, 0.0, pos);
   if(c->m_TypeId == "double")
-    TemplatedWriteImage<double>(file, 0.0);
-
+    TemplatedWriteImage<double>(file, 0.0, pos);
 }
+
+
 
 // Invocations
 template class WriteImage<double, 2>;

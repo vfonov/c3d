@@ -21,35 +21,29 @@ WarpLabelImage<TPixel, VDim>
   // Write something 
   *c->verbose << "Warping image label-wise #" << c->m_ImageStack.size() << endl;
 
+  // Index of the first warp image
+  size_t iwarp = c->m_ImageStack.size() - (VDim + 1);
+
+
   // Get the image to warp
   ImagePointer isrc = c->m_ImageStack[c->m_ImageStack.size() - 1];
 
   // Create a deformation field
-  typedef itk::ImageToVectorImageFilter<ImageType> VectorFilter;
-  typename VectorFilter::Pointer fltVec = VectorFilter::New();
-
-  // Get the array of warps
+  typedef itk::Vector<TPixel, VDim> VectorType;
+  typedef itk::OrientedRASImage<VectorType, VDim> FieldType;
+  typename FieldType::Pointer field = FieldType::New();
+  field->CopyInformation(c->m_ImageStack[iwarp]);
+  field->SetRegions(c->m_ImageStack[iwarp]->GetBufferedRegion());
+  field->Allocate();
+  size_t nvox = field->GetBufferedRegion().GetNumberOfPixels();
   for(size_t d = 0; d < VDim; d++)
     {
-    size_t k = c->m_ImageStack.size() + d - (VDim + 1); 
-    ImagePointer iwarp = c->m_ImageStack[k];
-    fltVec->SetInput(d, iwarp);
+    ImagePointer warp = c->m_ImageStack[iwarp + d];
+    if(warp->GetBufferedRegion() != field->GetBufferedRegion())
+      throw ConvertException("Warp field components have different dimensions");
+    for(size_t i = 0; i < nvox; i++)
+      field->GetBufferPointer()[i][d] = warp->GetBufferPointer()[i];
     }
-
-  // Compute the field
-  fltVec->Update();
-  typedef typename VectorFilter::OutputImageType FieldType;
-  typename FieldType::Pointer field = fltVec->GetOutput();
-
-  // Get the origin and spacing of the warp field
-  typename ImageType::PointType warp_origin = fltVec->GetInput(0)->GetOrigin();
-  typename ImageType::SpacingType warp_spacing = fltVec->GetInput(0)->GetSpacing();
-
-  // Set the origin to zero for both images (why?)
-  typename ImageType::PointType zero_origin;
-  zero_origin.Fill(0.0);
-  isrc->SetOrigin(zero_origin);
-  field->SetOrigin(zero_origin);
 
   // Create the warp filter
   typedef itk::WarpImageFilter<ImageType, ImageType, FieldType> WarpType;
@@ -62,6 +56,7 @@ WarpLabelImage<TPixel, VDim>
   // Update the warp fileter
   fltWarp->SetOutputSpacing(field->GetSpacing());
   fltWarp->SetOutputOrigin(field->GetOrigin());
+  fltWarp->SetOutputDirection(field->GetDirection());
   fltWarp->SetEdgePaddingValue(c->m_Background);
 
   // Find all unique labels in the input image
@@ -72,9 +67,8 @@ WarpLabelImage<TPixel, VDim>
 
   // Create the output image
   ImagePointer ilabel = ImageType::New();
+  ilabel->CopyInformation(field);
   ilabel->SetRegions(field->GetBufferedRegion());
-  ilabel->SetOrigin(warp_origin);
-  ilabel->SetSpacing(warp_spacing);
   ilabel->Allocate();
 
   // Create the 'score' image

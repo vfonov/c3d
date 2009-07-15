@@ -26,22 +26,25 @@ WarpImage<TPixel, VDim>
   // dirtemp.SetIdentity();
   // isrc->SetDirection(dirtemp);
 
-  // Create a deformation field
-  typedef itk::ImageToVectorImageFilter<ImageType> VectorFilter;
-  typename VectorFilter::Pointer fltVec = VectorFilter::New();
+  // Index of the first warp image
+  size_t iwarp = c->m_ImageStack.size() - (VDim + 1);
 
-  // Get the array of warps
+  // Create a deformation field
+  typedef itk::Vector<TPixel, VDim> VectorType;
+  typedef itk::OrientedRASImage<VectorType, VDim> FieldType;
+  typename FieldType::Pointer field = FieldType::New();
+  field->CopyInformation(c->m_ImageStack[iwarp]);
+  field->SetRegions(c->m_ImageStack[iwarp]->GetBufferedRegion());
+  field->Allocate();
+  size_t nvox = field->GetBufferedRegion().GetNumberOfPixels();
   for(size_t d = 0; d < VDim; d++)
     {
-    size_t k = c->m_ImageStack.size() + d - (VDim + 1); 
-    ImagePointer iwarp = c->m_ImageStack[k];
-    fltVec->SetInput(d, iwarp);
+    ImagePointer warp = c->m_ImageStack[iwarp + d];
+    if(warp->GetBufferedRegion() != field->GetBufferedRegion())
+      throw ConvertException("Warp field components have different dimensions");
+    for(size_t i = 0; i < nvox; i++)
+      field->GetBufferPointer()[i][d] = warp->GetBufferPointer()[i];
     }
-
-  // Compute the field
-  fltVec->Update();
-  typedef typename VectorFilter::OutputImageType FieldType;
-  typename FieldType::Pointer field = fltVec->GetOutput();
 
   // Create the warp filter
   typedef itk::WarpImageFilter<ImageType, ImageType, FieldType> WarpType;
