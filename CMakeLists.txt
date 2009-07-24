@@ -40,12 +40,15 @@ ENDIF(Boost_FOUND)
 IF(WIN32)
   ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
   ADD_DEFINITIONS(-D_SCL_SECURE_NO_WARNINGS)
+  SOURCE_GROUP("Adapter Sources" REGULAR_EXPRESSION "adapters/*cxx")
+  SOURCE_GROUP("Adapter Headers" REGULAR_EXPRESSION "adapters/*h")
 ENDIF(WIN32)
 
 SET(SOURCES
   adapters/AddImages.cxx
   adapters/AntiAliasImage.cxx
   adapters/ApplyMetric.cxx
+  adapters/BinaryImageCentroid.cxx
   adapters/ClipImageIntensity.cxx
   adapters/ComputeFFT.cxx
   adapters/ComputeOverlaps.cxx
@@ -85,7 +88,6 @@ SET(SOURCES
   adapters/WarpImage.cxx
   adapters/WarpLabelImage.cxx
   adapters/WriteImage.cxx
-  ConvertImageND.cxx
   ${CONVERT3D_BINARY_DIR}/ConvertImageVersion.cxx)
 
 # Pull in FFTW
@@ -109,9 +111,9 @@ ADD_LIBRARY(cnd ${SOURCES})
 LINK_LIBRARIES(
   cnd ${ITK_LIBRARIES} ITKVoxBoIO ITKPovRayIO)
 
-ADD_EXECUTABLE(c3d Convert3DMain.cxx)
+ADD_EXECUTABLE(c3d Convert3DMain.cxx ConvertImageND.cxx)
 
-ADD_EXECUTABLE(c2d Convert2DMain.cxx)
+ADD_EXECUTABLE(c2d Convert2DMain.cxx ConvertImageND.cxx)
 
 INSTALL_TARGETS("/bin" c3d c2d)
 

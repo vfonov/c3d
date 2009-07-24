@@ -6,6 +6,7 @@
 #include "AddImages.h"
 #include "AntiAliasImage.h"
 #include "ApplyMetric.h"
+#include "BinadyImageCentroid.h"
 #include "ClipImageIntensity.h"
 #include "ComputeFFT.h"
 #include "ComputeOverlaps.h"
@@ -98,6 +99,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -as, -set" << endl;
   cout << "    -background" << endl;
   cout << "    -binarize" << endl;
+  cout << "    -centroid" << endl;
   cout << "    -connected-components, -connected, -comp" << endl;
   cout << "    -clear" << endl;
   cout << "    -clip" << endl;
@@ -236,6 +238,13 @@ ImageConverter<TPixel, VDim>
     {
     ThresholdImage<TPixel, VDim> adapter(this);
     adapter(m_Background, m_Background, 0.0, 1.0);
+    return 0;
+    }
+
+  else if(cmd == "-centroid")
+    {
+    BinaryImageCentroid<TPixel, VDim> adapter(this);
+    adapter();
     return 0;
     }
 

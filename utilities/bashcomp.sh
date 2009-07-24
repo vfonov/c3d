@@ -8,6 +8,7 @@ function _c3d()
   opts="$opts -as  -set"
   opts="$opts -background"
   opts="$opts -binarize"
+  opts="$opts -centroid"  
   opts="$opts -connected-components  -connected  -comp"
   opts="$opts -clear"
   opts="$opts -clip"
@@ -109,5 +110,5 @@ function _c3d()
     return 0
   fi
 }
-complete -F _c3d c3d
+complete -F _c3d -o filenames c3d
 
