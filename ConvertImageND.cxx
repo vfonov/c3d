@@ -6,7 +6,7 @@
 #include "AddImages.h"
 #include "AntiAliasImage.h"
 #include "ApplyMetric.h"
-#include "BinadyImageCentroid.h"
+#include "BinaryImageCentroid.h"
 #include "ClipImageIntensity.h"
 #include "ComputeFFT.h"
 #include "ComputeOverlaps.h"
@@ -47,6 +47,7 @@
 #include "WarpImage.h"
 #include "WarpLabelImage.h"
 #include "WriteImage.h"
+#include "WeightedSum.h"
 
 #include <cstring>
 #include <algorithm>
@@ -180,6 +181,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -voxel-sum" << endl;
   cout << "    -voxel-integral, -voxel-int" << endl;
   cout << "    -warp" << endl;
+  cout << "    -weighted-sum, -wsum" << endl;
 }
 
 template<class TPixel, unsigned int VDim>
@@ -1081,6 +1083,18 @@ ImageConverter<TPixel, VDim>
     WarpLabelImage<TPixel, VDim> adapter(this);
     adapter(stdev);
     return 1;
+    }
+
+  else if(cmd == "-weighted-sum" || cmd == "-wsum")
+    {
+    std::vector<double> weights;
+    for(size_t i = 1; i < argc; i++)
+      if(argv[i][0] != '-')
+        weights.push_back(atof(argv[i]));
+      else break;
+    WeightedSum<TPixel,VDim> adapter(this);
+    adapter(weights);
+    return weights.size();
     }
 
   // Unknown command

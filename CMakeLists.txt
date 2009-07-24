@@ -87,6 +87,7 @@ SET(SOURCES
   adapters/Vote.cxx
   adapters/WarpImage.cxx
   adapters/WarpLabelImage.cxx
+  adapters/WeightedSum.cxx
   adapters/WriteImage.cxx
   ${CONVERT3D_BINARY_DIR}/ConvertImageVersion.cxx)
 
@@ -106,14 +107,15 @@ CONFIGURE_FILE(
 SUBDIRS(itkextras)
 SUBDIRS(utilities)
 
-ADD_LIBRARY(cnd ${SOURCES})
+ADD_LIBRARY(cnd_adapters ${SOURCES})
+ADD_LIBRARY(cnd_driver ConvertImageND.cxx)
 
 LINK_LIBRARIES(
-  cnd ${ITK_LIBRARIES} ITKVoxBoIO ITKPovRayIO)
+  cnd_adapters cnd_driver ${ITK_LIBRARIES} ITKVoxBoIO ITKPovRayIO)
 
-ADD_EXECUTABLE(c3d Convert3DMain.cxx ConvertImageND.cxx)
+ADD_EXECUTABLE(c3d Convert3DMain.cxx)
 
-ADD_EXECUTABLE(c2d Convert2DMain.cxx ConvertImageND.cxx)
+ADD_EXECUTABLE(c2d Convert2DMain.cxx)
 
 INSTALL_TARGETS("/bin" c3d c2d)
 
