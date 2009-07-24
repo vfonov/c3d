@@ -164,6 +164,10 @@ public:
   // Level set algorithm parameters
   double m_LevSetCurvature, m_LevSetAdvection;
 
+  // How % is handled for intensity specs
+  enum PercentIntensityMode { PIM_QUANTILE, PIM_FGQUANTILE, PIM_RANGE };
+  PercentIntensityMode m_PercentIntensityMode;
+
   // Verbose output stream
   std::ostringstream devnull;
   std::ostream *verbose;

@@ -79,6 +79,7 @@ ImageConverter<TPixel,VDim>
   m_AntiAliasRMS = 0.07;
   m_Iterations = 0;
   m_InLoop = false;
+  m_PercentIntensityMode = PIM_QUANTILE;
 
   m_LevSetCurvature = 0.2;
   m_LevSetAdvection = 0.0;
@@ -145,6 +146,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -origin" << endl;
   cout << "    -overlap" << endl;
   cout << "    -pad" << endl;
+  cout << "    -percent-intensity-mode, -pim" << endl;
   cout << "    -pixel" << endl;
   cout << "    -pop" << endl;
   cout << "    -popas" << endl;
@@ -233,7 +235,11 @@ ImageConverter<TPixel, VDim>
     }
 
   else if(cmd == "-background")
-    { m_Background = atof(argv[1]); return 1; }
+    { 
+    m_Background = atof(argv[1]); 
+    *verbose << "Background value set to " << m_Background << endl;
+    return 1; 
+    }
 
   // f(x) = (x == xBackground) ? 0 : 1
   else if(cmd == "-binarize")
@@ -720,22 +726,38 @@ ImageConverter<TPixel, VDim>
 
   else if(cmd == "-pad")
     {
-      // specify two sizes that give the padding in x,y,z
-      // pad is the offset (in voxels) from the edge of the image to the
-      // padExtent. Example: -pad 1x1x1vox 0x0x0vox pads on the left, posterior, inferior sides
-      // by one voxel -pad 10x10x10% 10x10x10% adds 10% on all sides
-      IndexType padExtentLower, padExtentUpper;
+    // specify two sizes that give the padding in x,y,z
+    // pad is the offset (in voxels) from the edge of the image to the
+    // padExtent. Example: -pad 1x1x1vox 0x0x0vox pads on the left, posterior, inferior sides
+    // by one voxel -pad 10x10x10% 10x10x10% adds 10% on all sides
+    IndexType padExtentLower, padExtentUpper;
 
-      padExtentLower = ReadIndexVector(argv[1]);
-      padExtentUpper = ReadIndexVector(argv[2]);
+    padExtentLower = ReadIndexVector(argv[1]);
+    padExtentUpper = ReadIndexVector(argv[2]);
 
-      float padValue = atof(argv[3]);
+    float padValue = atof(argv[3]);
 
-      *verbose << "Padding image #" << m_ImageStack.size() << endl;
+    *verbose << "Padding image #" << m_ImageStack.size() << endl;
 
-      PadImage<TPixel, VDim> adapter(this);
-      adapter(padExtentLower, padExtentUpper, padValue);
-      return 3;
+    PadImage<TPixel, VDim> adapter(this);
+    adapter(padExtentLower, padExtentUpper, padValue);
+    return 3;
+    }
+
+  else if(cmd == "-percent-intensity-mode" || cmd == "-pim")
+    {
+    // What does % mean when specifying intensities
+    string pim = argv[1];
+    std::transform(pim.begin(), pim.end(), pim.begin(), (int(*)(int)) tolower);
+    if(pim == "quantile" || pim == "q")
+      m_PercentIntensityMode = PIM_QUANTILE;
+    else if(pim == "foregroundquantile" || pim == "fq")
+      m_PercentIntensityMode = PIM_FGQUANTILE;
+    else if(pim == "range" || pim == "r")
+      m_PercentIntensityMode = PIM_RANGE;
+    else
+      throw ConvertException("Wrong -percent-intensity-mode spec %s. See help.", pim);
+    return 1;
     }
 
   else if(cmd == "-pixel")
@@ -1290,22 +1312,71 @@ ImageConverter<TPixel, VDim>
   // Check if there is a '%' specification
   if(*endptr == '%')
     {
-    // Check valid quantile
-    if(val < 0.0 || val > 100.0)
-      throw ConvertException("Invalid quantile spec %s, must be between 0 and 100", vec);
+    if(m_PercentIntensityMode == PIM_QUANTILE || m_PercentIntensityMode == PIM_FGQUANTILE)
+      {
+      // Check valid quantile
+      if(val < 0.0 || val > 100.0)
+        throw ConvertException("Invalid quantile spec %s, must be between 0 and 100", vec);
 
-    // Compute the specified quantile
-    double qtile = 0.01 * val;
-    if(m_ImageStack.size() == 0)
-      throw ConvertException("Can't use intensity quantile spec with no image on stack");
-    size_t n = m_ImageStack.back()->GetBufferedRegion().GetNumberOfPixels();
-    TPixel *asort = new TPixel[n];
-    std::copy(m_ImageStack.back()->GetBufferPointer(), m_ImageStack.back()->GetBufferPointer() + n, asort);
-    std::sort(asort, asort+n);
-    size_t k = (size_t) (qtile * n);
-    val = asort[k];
-    delete asort;
-    *verbose << "Quantile " << qtile << " maps to " << val << endl;
+      // Compute the specified quantile
+      double qtile = 0.01 * val;
+      if(m_ImageStack.size() == 0)
+        throw ConvertException("Can't use intensity quantile spec with no image on stack");
+    
+      // Allocate an array for sorting
+      size_t n = m_ImageStack.back()->GetBufferedRegion().GetNumberOfPixels();
+      TPixel *asort = new TPixel[n], *p = asort, *q = m_ImageStack.back()->GetBufferPointer();
+
+      // Copy intensity values that are legit, ignore nans
+      for(size_t i = 0; i < n; i++, q++)
+        {
+        // We don't include nans and if FGQUANTILE, background values
+        if(!vnl_math_isnan(*q))
+          if(m_PercentIntensityMode == PIM_QUANTILE || *q != m_Background)
+            {*p = *q; ++p;}
+        }
+
+      // Get the size of the sort array
+      size_t np = p - asort;
+      if(np == 0)
+        {
+        if(m_PercentIntensityMode == PIM_QUANTILE)
+          throw ConvertException("Quantile could not be computed because the image has only NANs");
+        else
+          throw ConvertException("Foreground quantile could not be computed because the image has only background");
+        }
+
+      // Sort the acceptable values
+      std::sort(asort, p);
+
+      // Get the quantile
+      size_t k = (size_t) (qtile * np);
+      val = asort[k];
+      delete asort;
+
+      if(m_PercentIntensityMode == PIM_QUANTILE)
+        *verbose << "Quantile " << qtile << " maps to " << val << endl;
+      else
+        *verbose << "Foreground quantile " << qtile <<  " (over " 
+        << np << " voxels) maps to " << val << endl;
+      }
+    else
+      {
+      // A range specification. We need the min and max of the image
+      double imin = numeric_limits<double>::max();
+      double imax = - numeric_limits<double>::max();
+      size_t n = m_ImageStack.back()->GetBufferedRegion().GetNumberOfPixels();
+      TPixel *q = m_ImageStack.back()->GetBufferPointer();
+      for(size_t i = 0; i < n; i++, q++)
+        {
+        if(*q < imin) imin = *q;
+        if(*q > imax) imax = *q;
+        }
+
+      double rspec = val * 0.01;
+      val = imin + rspec * (imax - imin);
+      *verbose << "Intensity range spec " << rspec << " maps to " << val << endl;
+      }
     }
 
   return val;
