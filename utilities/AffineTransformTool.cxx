@@ -206,44 +206,21 @@ void ras_inv(MatrixStack &vmat)
 void ras_sqrt(MatrixStack &vmat)
 {
   MatrixType m = vmat.back();
-  
-  // Extract the rotation matrix
-  vnl_matrix<double> A = m.extract(3,3);
-   
-  // Compute the eigensystem of the rotation matrix
-  vnl_real_eigensystem eig(A);
-  vnl_matrix<vcl_complex<double> > D = eig.D;
-  vnl_matrix<vcl_complex<double> > V = eig.V;
 
-  // Compute the square root of the rotation matrix
-  D.apply(vcl_sqrt);
-  vnl_matrix<vcl_complex<double> > QC = V * D * V.transpose();
-
-  // Take the real part of QC
-  vnl_matrix_fixed<double, 3, 3> Q, QI;
-  for(size_t i = 0; i < 3; i++)
-    for(size_t j = 0; j < 3; j++)
-      Q(i,j) = vcl_real(QC(i,j));
-
-  // Compute Q + I
-  QI.set_identity();
-  QI+=Q;
-
-  // Compute the offset
-  vnl_vector<double> b = m.get_column(3).extract(3);
-  vnl_qr<double> qr(QI);
-  vnl_vector<double> p = qr.solve(b);
-
-  // Create the output matrix
-  MatrixType Z;
+  // Peform Denman-Beavers iteration
+  MatrixType Z, Y = m;
   Z.set_identity();
-  Z.update(Q, 0, 0);
-  
-  for(size_t i = 0; i < 3; i++)
-    Z(i,3) = p(i);
+
+  for(size_t i = 0; i < 16; i++)
+    {
+    MatrixType Ynext = 0.5 * (Y + vnl_inverse(Z));
+    MatrixType Znext = 0.5 * (Z + vnl_inverse(Y));
+    Y = Ynext;
+    Z = Znext;
+    }
 
   vmat.pop_back();
-  vmat.push_back(Z);
+  vmat.push_back(Y);
 }
 
 void ras_det(MatrixStack &vmat)
@@ -279,6 +256,7 @@ void ras_sform(MatrixStack &vmat, const char *fname)
 void ras_print(MatrixStack &vmat)
 {
   MatrixType m = vmat.back();
+  printf("Matrix #%d:\n", (int) vmat.size());
   for(size_t i = 0; i < 4; i++)
     printf("%12.5f   %12.5f   %12.5f   %12.5f\n", m(i,0), m(i,1), m(i,2), m(i,3));
 }
