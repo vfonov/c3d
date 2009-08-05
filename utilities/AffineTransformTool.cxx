@@ -7,6 +7,8 @@
 #include "vnl/vnl_matrix_fixed.h"
 #include "vnl/vnl_det.h"
 #include "vnl/vnl_inverse.h"
+#include "vnl/algo/vnl_real_eigensystem.h"
+#include "vnl/algo/vnl_qr.h"
 #include <iostream>
 
 using namespace std;
@@ -18,18 +20,24 @@ typedef std::vector<MatrixType> MatrixStack;
 
 int usage()
 {
-  cout << "RAS Affine Transform Tool" << endl;
-  cout << "Usage: " << endl;
-  cout << "  c3d_affine_tool [transform_files | options] " << endl;
-  cout << "Options: " << endl;
-  cout << "  -ref image    Set reference (fixed) image" << endl;
-  cout << "  -src image    Set source (moving) image" << endl;
-  cout << "  -o matfile    Write output matrix" << endl;
-  cout << "  -fsl2ras      Convert FSL to RAS" << endl;
-  cout << "  -mult         Multiply matrices" << endl;
-  cout << "  -inv          Invert matrix" << endl;
-  cout << "  -det          Print the determinant" << endl;
-  cout << "  -itk file     Import ITK transform" << endl;
+  cout << 
+    "RAS Affine Transform Tool"
+    "Usage: \n"
+    "  c3d_affine_tool [transform_files | options] \n"
+    "Options: \n"
+    "  -fsl2ras      Convert FSL to RAS\n"
+    "  -ref image    Set reference (fixed) image - only for -fsl2ras\n"
+    "  -src image    Set source (moving) image - only for -fsl2ras\n"
+    "  -sform image  Read matrix from NIfTI sform\n"
+    "  -o matfile    Write output matrix\n"
+    "  -det          Print the determinant\n"
+    "  -inv          Invert matrix\n"
+    "  -mult         Multiply matrices\n"
+    "  -sqrt         Matrix square root (i.e., Q s.t. A = Q * Q)\n"
+    "  -itk file     Import ITK transform\n"
+    "  -oitk file    Export ITK transform\n"
+    "  -info         Print matrix\n"
+    ;
   return -1;
 }
 
@@ -195,6 +203,49 @@ void ras_inv(MatrixStack &vmat)
   vmat.push_back(minv);
 }
 
+void ras_sqrt(MatrixStack &vmat)
+{
+  MatrixType m = vmat.back();
+  
+  // Extract the rotation matrix
+  vnl_matrix<double> A = m.extract(3,3);
+   
+  // Compute the eigensystem of the rotation matrix
+  vnl_real_eigensystem eig(A);
+  vnl_matrix<vcl_complex<double> > D = eig.D;
+  vnl_matrix<vcl_complex<double> > V = eig.V;
+
+  // Compute the square root of the rotation matrix
+  D.apply(vcl_sqrt);
+  vnl_matrix<vcl_complex<double> > QC = V * D * V.transpose();
+
+  // Take the real part of QC
+  vnl_matrix_fixed<double, 3, 3> Q, QI;
+  for(size_t i = 0; i < 3; i++)
+    for(size_t j = 0; j < 3; j++)
+      Q(i,j) = vcl_real(QC(i,j));
+
+  // Compute Q + I
+  QI.set_identity();
+  QI+=Q;
+
+  // Compute the offset
+  vnl_vector<double> b = m.get_column(3).extract(3);
+  vnl_qr<double> qr(QI);
+  vnl_vector<double> p = qr.solve(b);
+
+  // Create the output matrix
+  MatrixType Z;
+  Z.set_identity();
+  Z.update(Q, 0, 0);
+  
+  for(size_t i = 0; i < 3; i++)
+    Z(i,3) = p(i);
+
+  vmat.pop_back();
+  vmat.push_back(Z);
+}
+
 void ras_det(MatrixStack &vmat)
 {
   MatrixType m = vmat.back();
@@ -202,6 +253,35 @@ void ras_det(MatrixStack &vmat)
   cout << "Det: " << det << endl;
 }
 
+void ras_sform(MatrixStack &vmat, const char *fname)
+{
+  typedef itk::OrientedRASImage<float, 3> ImageType;
+  typedef itk::ImageFileReader<ImageType> ReaderType;
+  ReaderType::Pointer reader = ReaderType::New();
+  reader->SetFileName(fname);
+  try 
+    {
+    reader->Update();
+    }
+  catch(std::exception &exc) 
+    {
+    cerr << "Can not read image " << fname << endl;
+    cerr << "Reason: " << exc.what() << endl;
+    }
+
+  ImageType::Pointer img = reader->GetOutput();
+ 
+  // Set up the directions
+  MatrixType m = img->GetVoxelSpaceToRASPhysicalSpaceMatrix().GetVnlMatrix();
+  vmat.push_back(m);
+}
+
+void ras_print(MatrixStack &vmat)
+{
+  MatrixType m = vmat.back();
+  for(size_t i = 0; i < 4; i++)
+    printf("%12.5f   %12.5f   %12.5f   %12.5f\n", m(i,0), m(i,1), m(i,2), m(i,3));
+}
 
 void ras_mult(MatrixStack &vmat)
 {
@@ -262,6 +342,18 @@ int main(int argc, char *argv[])
     else if(arg == "-inv")
       {
       ras_inv(vmat);
+      }
+    else if(arg == "-sqrt")
+      {
+      ras_sqrt(vmat);
+      }
+    else if(arg == "-info")
+      {
+      ras_print(vmat);
+      }
+    else if(arg == "-sform")
+      {
+      ras_sform(vmat, argv[++iarg]);
       }
     else if(arg == "-itk")
       {
