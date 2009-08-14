@@ -4,42 +4,19 @@
 #include "itkOrientedRASImage.h"
 #include "itkImageRegionIteratorWithIndex.h"
 #include "itkInterpolateImageFunction.h"
+#include "ConvertException.h"
 
 #include <iostream>
-#include <exception>
 #include <cctype>
 #include <string>
 #include <vector>
 #include <map>
 #include <algorithm>
 #include <cstdlib>
-#include <cstdarg>
 
 using namespace std;
 
 template <class TPixel, unsigned int VDim> class ConvertAdapter;
-
-class ConvertException : public std::exception
-{
-public:
-  ConvertException(const char *fmt, ...)
-    {
-    char buffer[1024];
-    va_list parg;
-    va_start(parg, fmt);
-    vsprintf(buffer, fmt, parg);
-    va_end(parg);
-    message=buffer;
-    }
-
-  virtual ~ConvertException() throw() {}
-
-  virtual const char *what() const throw()
-    { return message.c_str(); }
-
-private:
-  string message;
-};
 
 template<class TPixel, unsigned int VDim>
 class ImageConverter
