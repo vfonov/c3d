@@ -43,6 +43,7 @@ function _c3d()
   opts="$opts -mi  -mutual-info"
   opts="$opts -mixture  -mixture-model"
   opts="$opts -multiply  -times"
+  opts="$opts -ncc  -normalized-cross-correlation"
   opts="$opts -nmi  -normalized-mutual-info"
   opts="$opts -normpdf"
   opts="$opts -noround"

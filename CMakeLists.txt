@@ -66,9 +66,11 @@ SET(SOURCES
   adapters/MathematicalMorphology.cxx
   adapters/MixtureModel.cxx
   adapters/MultiplyImages.cxx
+  adapters/NormalizedCrossCorrelation.cxx
   adapters/PadImage.cxx
   adapters/PeronaMalik.cxx
   adapters/PrintImageInfo.cxx
+  adapters/Rank.cxx
   adapters/ReadImage.cxx
   adapters/ReciprocalImage.cxx
   adapters/ReplaceIntensities.cxx

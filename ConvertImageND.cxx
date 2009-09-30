@@ -25,9 +25,11 @@
 #include "MathematicalMorphology.h"
 #include "MixtureModel.h"
 #include "MultiplyImages.h"
+#include "NormalizedCrossCorrelation.h"
 #include "PadImage.h"
 #include "PeronaMalik.h"
 #include "PrintImageInfo.h"
+#include "Rank.h"
 #include "ReadImage.h"
 #include "ReciprocalImage.h"
 #include "ReplaceIntensities.h"
@@ -136,6 +138,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -mi, -mutual-info" << endl;
   cout << "    -mixture, -mixture-model" << endl;
   cout << "    -multiply, -times" << endl;
+  cout << "    -ncc, -normalized-cross-correlation" << endl;
   cout << "    -nmi, -normalized-mutual-info" << endl;
   cout << "    -normpdf" << endl;
   cout << "    -noround" << endl;
@@ -152,6 +155,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -popas" << endl;
   cout << "    -probe" << endl;
   cout << "    -push, -get" << endl;
+  cout << "    -rank" << endl;
   cout << "    -reciprocal" << endl;
   cout << "    -region" << endl;
   cout << "    -replace" << endl;
@@ -579,6 +583,14 @@ ImageConverter<TPixel, VDim>
     return 0;
     }
 
+  else if(cmd == "-ncc" || cmd == "-normalized-cross-correlation")
+    {
+    SizeType sz = ReadSizeVector(argv[1]);
+    NormalizedCrossCorrelation<TPixel,VDim> adapter(this);
+    adapter(sz);
+    return 1;
+    }
+
   else if(cmd == "-nmi" || cmd == "-normalized-mutual-info")
     {
     ApplyMetric<TPixel, VDim> adapter(this);
@@ -756,7 +768,7 @@ ImageConverter<TPixel, VDim>
     else if(pim == "range" || pim == "r")
       m_PercentIntensityMode = PIM_RANGE;
     else
-      throw ConvertException("Wrong -percent-intensity-mode spec %s. See help.", pim);
+      throw ConvertException("Wrong -percent-intensity-mode spec %s. See help.", pim.c_str());
     return 1;
     }
 
@@ -812,6 +824,12 @@ ImageConverter<TPixel, VDim>
     return 1;
     }
 
+  else if(cmd == "-rank")
+    {
+    Rank<TPixel,VDim> adapter(this);
+    adapter();
+    return 0;
+    }
 
   else if(cmd == "-reciprocal")
     {
