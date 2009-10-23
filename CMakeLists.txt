@@ -18,6 +18,7 @@ INCLUDE_DIRECTORIES(${CONVERT3D_SOURCE_DIR}/adapters)
 INCLUDE_DIRECTORIES(${CONVERT3D_SOURCE_DIR}/itkextras/)
 INCLUDE_DIRECTORIES(${CONVERT3D_SOURCE_DIR}/itkextras/VoxBoIO)
 INCLUDE_DIRECTORIES(${CONVERT3D_SOURCE_DIR}/itkextras/PovRayIO)
+INCLUDE_DIRECTORIES(${CONVERT3D_SOURCE_DIR}/itkextras/N3ITK)
 
 # Get ITK
 FIND_PACKAGE(ITK 3.14 REQUIRED)
@@ -48,6 +49,7 @@ SET(SOURCES
   adapters/AddImages.cxx
   adapters/AntiAliasImage.cxx
   adapters/ApplyMetric.cxx
+  adapters/BiasFieldCorrection.cxx
   adapters/BinaryImageCentroid.cxx
   adapters/ClipImageIntensity.cxx
   adapters/ComputeFFT.cxx

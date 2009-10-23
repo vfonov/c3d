@@ -7,6 +7,7 @@ function _c3d()
   opts="$opts -antialias  -alias"
   opts="$opts -as  -set"
   opts="$opts -background"
+  opts="$opts -biascorr"
   opts="$opts -binarize"
   opts="$opts -centroid"  
   opts="$opts -connected-components  -connected  -comp"

@@ -6,6 +6,7 @@
 #include "AddImages.h"
 #include "AntiAliasImage.h"
 #include "ApplyMetric.h"
+#include "BiasFieldCorrection.h"
 #include "BinaryImageCentroid.h"
 #include "ClipImageIntensity.h"
 #include "ComputeFFT.h"
@@ -102,6 +103,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -antialias, -alias" << endl;
   cout << "    -as, -set" << endl;
   cout << "    -background" << endl;
+  cout << "    -biascorr" << endl;
   cout << "    -binarize" << endl;
   cout << "    -centroid" << endl;
   cout << "    -connected-components, -connected, -comp" << endl;
@@ -243,6 +245,13 @@ ImageConverter<TPixel, VDim>
     m_Background = atof(argv[1]); 
     *verbose << "Background value set to " << m_Background << endl;
     return 1; 
+    }
+
+  else if(cmd == "-biascorr")
+    {
+    BiasFieldCorrection<TPixel, VDim> adapter(this);
+    adapter();
+    return 0;
     }
 
   // f(x) = (x == xBackground) ? 0 : 1
