@@ -3,8 +3,8 @@
   Program:   Insight Segmentation & Registration Toolkit
   Module:    $RCSfile: itkN3MRIBiasFieldCorrectionImageFilter.txx,v $
   Language:  C++
-  Date:      $Date: 2009/10/23 20:42:50 $
-  Version:   $Revision: 1.1 $
+  Date:      $Date: 2009/11/06 15:16:41 $
+  Version:   $Revision: 1.2 $
 
   Copyright (c) Insight Software Consortium. All rights reserved.
   See ITKCopyright.txt or http://www.itk.org/HTML/Copyright.htm for details.
@@ -132,9 +132,6 @@ N3MRIBiasFieldCorrectionImageFilter<TInputImage, TMaskImage, TOutputImage>
       = this->CalculateConvergenceMeasurement( logBiasField, newLogBiasField );
     isConverged = ( this->m_CurrentConvergenceMeasurement <
       this->m_ConvergenceThreshold );
-
-    itkDebugMacro( "Iteration " << iteration << ": "
-      << " convergence criterion = " << cv );
 
     logBiasField = newLogBiasField;
 

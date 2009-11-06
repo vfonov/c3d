@@ -47,6 +47,7 @@
 #include "UnaryMathOperation.h"
 #include "UpdateMetadataKey.h"
 #include "Vote.h"
+#include "VoxelwiseRegression.h"
 #include "WarpImage.h"
 #include "WarpLabelImage.h"
 #include "WriteImage.h"
@@ -188,6 +189,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -vote-label" << endl;
   cout << "    -voxel-sum" << endl;
   cout << "    -voxel-integral, -voxel-int" << endl;
+  cout << "    -voxelwise-regression, -voxreg" << endl;
   cout << "    -warp" << endl;
   cout << "    -weighted-sum, -wsum" << endl;
 }
@@ -1115,6 +1117,15 @@ ImageConverter<TPixel, VDim>
       vol *= m_ImageStack.back()->GetSpacing()[d];
     cout << "Voxel Integral: " << sum * vol << endl;
     return 0;
+    }
+
+  else if(cmd == "-voxelwise-regression" || cmd == "-voxreg")
+    {
+    // Get the order 
+    size_t order = atoi(argv[1]);
+    VoxelwiseRegression<TPixel, VDim> adapter(this);
+    adapter(order);
+    return 1;
     }
 
   // Warp image

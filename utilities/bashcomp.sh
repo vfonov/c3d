@@ -90,6 +90,7 @@ function _c3d()
   opts="$opts -vote-label"
   opts="$opts -voxel-sum"
   opts="$opts -voxel-integral  -voxel-int"
+  opts="$opts -voxelwise-regression -voxreg"
   opts="$opts -warp"
   opts="$opts -warp-label  -warplabel  -wl"
 
