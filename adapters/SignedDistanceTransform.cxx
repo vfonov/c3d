@@ -1,6 +1,6 @@
 #include "SignedDistanceTransform.h"
 #include "ThresholdImage.h"
-#include "itkSignedDanielssonDistanceMapImageFilter.h"
+#include "itkSignedMaurerDistanceMapImageFilter.h"
 
 template <class TPixel, unsigned int VDim>
 void
@@ -19,7 +19,7 @@ SignedDistanceTransform<TPixel, VDim>
   ImagePointer image = c->m_ImageStack.back();
 
   // Construct the connected components filter
-  typedef itk::SignedDanielssonDistanceMapImageFilter<ImageType, ImageType> Filter;
+  typedef itk::SignedMaurerDistanceMapImageFilter<ImageType, ImageType> Filter;
 
   // Describe what we are doing
   *c->verbose << "Computing signed distance function of #" << c->m_ImageStack.size() << endl;
