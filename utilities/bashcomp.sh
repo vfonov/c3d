@@ -1,4 +1,4 @@
-function _c3d() 
+function _c3d()
 {
   local cur prev opts interp
   opts=""
@@ -9,7 +9,7 @@ function _c3d()
   opts="$opts -background"
   opts="$opts -biascorr"
   opts="$opts -binarize"
-  opts="$opts -centroid"  
+  opts="$opts -centroid"
   opts="$opts -connected-components  -connected  -comp"
   opts="$opts -clear"
   opts="$opts -clip"
@@ -31,6 +31,7 @@ function _c3d()
   opts="$opts -insert  -ins"
   opts="$opts -interpolation  -interp  -int"
   opts="$opts -iterations"
+  opts="$opts -label-overlap"
   opts="$opts -label-statistics  -lstat"
   opts="$opts -laplacian  -laplace"
   opts="$opts -levelset"

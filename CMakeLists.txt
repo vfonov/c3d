@@ -28,6 +28,7 @@ INCLUDE(${ITK_USE_FILE})
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_DEBUG TRUE)
+set(BOOST_ROOT /Users/nick/pkg/boost_1_41_1_beta1/)
 FIND_PACKAGE(Boost 1.33 COMPONENTS regex)
 IF(Boost_FOUND)
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
@@ -63,6 +64,7 @@ SET(SOURCES
   adapters/ImageERF.cxx
   adapters/ImageLaplacian.cxx
   adapters/GeneralLinearModel.cxx
+  adapters/LabelOverlapMeasures.cxx
   adapters/LabelStatistics.cxx
   adapters/LevelSetSegmentation.cxx
   adapters/MathematicalMorphology.cxx

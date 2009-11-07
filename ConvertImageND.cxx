@@ -21,6 +21,7 @@
 #include "HistogramMatch.h"
 #include "ImageERF.h"
 #include "ImageLaplacian.h"
+#include "LabelOverlapMeasures.h"
 #include "LabelStatistics.h"
 #include "LevelSetSegmentation.h"
 #include "MathematicalMorphology.h"
@@ -128,6 +129,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -insert, -ins" << endl;
   cout << "    -interpolation, -interp, -int" << endl;
   cout << "    -iterations" << endl;
+  cout << "    -label-overlap" << std::endl;
   cout << "    -label-statistics, -lstat" << endl;
   cout << "    -laplacian, -laplace" << endl;
   cout << "    -levelset" << endl;
@@ -230,7 +232,7 @@ ImageConverter<TPixel, VDim>
     adapter(atof(argv[1]));
     return 1;
     }
-   
+
   // Associate variable name with image currently at the top of
   // the stack
   else if(cmd == "-as" || cmd == "-set")
@@ -243,10 +245,10 @@ ImageConverter<TPixel, VDim>
     }
 
   else if(cmd == "-background")
-    { 
-    m_Background = atof(argv[1]); 
+    {
+    m_Background = atof(argv[1]);
     *verbose << "Background value set to " << m_Background << endl;
-    return 1; 
+    return 1;
     }
 
   else if(cmd == "-biascorr")
@@ -374,7 +376,7 @@ ImageConverter<TPixel, VDim>
     return 0;
     }
 
-  else if(cmd == "-foreach")    
+  else if(cmd == "-foreach")
     {
     if(m_InLoop)
       throw ConvertException("Nested loops are not allowed");
@@ -407,17 +409,17 @@ ImageConverter<TPixel, VDim>
     }
 
   else if(cmd == "-info")
-    { 
+    {
     PrintImageInfo<TPixel, VDim> adapter(this);
-    adapter(false); 
-    return 0; 
+    adapter(false);
+    return 0;
     }
 
   else if(cmd == "-info-full")
-    { 
+    {
     PrintImageInfo<TPixel, VDim> adapter(this);
-    adapter(true); 
-    return 0; 
+    adapter(true);
+    return 0;
     }
 
   else if (cmd == "-insert" || cmd == "-ins")
@@ -438,12 +440,12 @@ ImageConverter<TPixel, VDim>
     typename vector<ImagePointer>::iterator it = m_ImageStack.end();
     for(size_t i = 0; i < pos; i++) --it;
     m_ImageStack.insert(it, img->second);
-    
+
     return 2;
     }
 
   else if(cmd == "-interpolation" || cmd == "-interp" || cmd == "-int")
-    { 
+    {
     // Adapter that creates interpolators
     CreateInterpolator<TPixel, VDim> adapter(this);
 
@@ -453,7 +455,7 @@ ImageConverter<TPixel, VDim>
 
     if(m_Interpolation == "nearestneighbor" || m_Interpolation == "nn" || m_Interpolation == "0")
       {
-      adapter.CreateNN(); 
+      adapter.CreateNN();
       return 1;
       }
     else if(m_Interpolation == "linear" || m_Interpolation == "1")
@@ -463,7 +465,7 @@ ImageConverter<TPixel, VDim>
       }
     else if(m_Interpolation == "cubic" || m_Interpolation == "3")
       {
-      adapter.CreateCubic(); 
+      adapter.CreateCubic();
       return 1;
       }
     else if(m_Interpolation == "sinc")
@@ -484,9 +486,15 @@ ImageConverter<TPixel, VDim>
     }
 
   else if(cmd == "-iterations")
-    { 
-    m_Iterations = static_cast<size_t>(atoi(argv[1])); 
-    return 1; 
+    {
+    m_Iterations = static_cast<size_t>(atoi(argv[1]));
+    return 1;
+    }
+
+  else if(cmd == "-label-overlap")
+    {
+    LabelOverlapMeasures<TPixel, VDim>(this)();
+    return 0;
     }
 
   else if(cmd == "-label-statistics" || cmd == "-lstat")
@@ -515,7 +523,7 @@ ImageConverter<TPixel, VDim>
     m_LevSetCurvature = atof(argv[1]);
     return 1;
     }
-  
+
   else if(cmd == "-levelset-advection")
     {
     m_LevSetAdvection = atof(argv[1]);
@@ -705,7 +713,7 @@ ImageConverter<TPixel, VDim>
 
       if(nfiles == 0)
         throw ConvertException("No files specified to -oo command");
-      
+
       if(nfiles > m_ImageStack.size())
         throw ConvertException("Too many files specified to -oo command");
 
@@ -787,7 +795,7 @@ ImageConverter<TPixel, VDim>
     {
     // Get a pixel value - no interpolation
     typename RegionType::IndexType idx = ReadIndexVector(argv[1]);
-    try 
+    try
       {
       double pix = m_ImageStack.back()->GetPixel(idx);
       cout << "Pixel " << idx << " has value " << pix << endl;
@@ -798,7 +806,7 @@ ImageConverter<TPixel, VDim>
       }
     return 1;
     }
-  
+
   else if(cmd == "-pop")
     {
     *verbose << "Removing (popping) the last image from the stack" << endl;
@@ -870,7 +878,7 @@ ImageConverter<TPixel, VDim>
     // Read a list of numbers from the command line
     for(int i = 1; i < argc; i++)
       {
-      try 
+      try
         { vReplace.push_back(myatof(argv[i])); }
       catch(...)
         { break; }
@@ -938,7 +946,7 @@ ImageConverter<TPixel, VDim>
 
   else if(cmd == "-rms")
     { m_AntiAliasRMS = atof(argv[1]); return 1; }
- 
+
   else if(cmd == "-round")
     { m_RoundFactor = 0.5; return 0; }
 
@@ -964,7 +972,7 @@ ImageConverter<TPixel, VDim>
     adapter();
     return 0;
     }
-  
+
   // Gaussian smoothing command
   else if(cmd == "-smooth")
     {
@@ -1063,19 +1071,19 @@ ImageConverter<TPixel, VDim>
 
   // Output type specification
   else if(cmd == "-type")
-    { 
-    m_TypeId = argv[1]; 
+    {
+    m_TypeId = argv[1];
     int (*pf)(int) = tolower;
     transform(m_TypeId.begin(), m_TypeId.end(), m_TypeId.begin(), pf);
-    return 1; 
+    return 1;
     }
 
   // Verbose mode
   else if(cmd == "-verbose")
     { verbose = &std::cout; return 0; }
-  
+
   else if(cmd == "-version")
-    { 
+    {
     cout << "Version " << ImageConverter_VERSION_STRING << endl;
     return 0;
     }
@@ -1121,7 +1129,7 @@ ImageConverter<TPixel, VDim>
 
   else if(cmd == "-voxelwise-regression" || cmd == "-voxreg")
     {
-    // Get the order 
+    // Get the order
     size_t order = atoi(argv[1]);
     VoxelwiseRegression<TPixel, VDim> adapter(this);
     adapter(order);
@@ -1130,7 +1138,7 @@ ImageConverter<TPixel, VDim>
 
   // Warp image
   else if(cmd == "-warp")
-    { 
+    {
     WarpImage<TPixel, VDim> adapter(this);
     adapter();
     return 0;
@@ -1138,7 +1146,7 @@ ImageConverter<TPixel, VDim>
 
   // Warp label image
   else if(cmd == "-warp-label" || cmd=="-warplabel" || cmd=="-wl")
-    { 
+    {
     RealVector stdev = ReadRealSize(argv[1]);
     WarpLabelImage<TPixel, VDim> adapter(this);
     adapter(stdev);
@@ -1186,7 +1194,7 @@ ImageConverter<TPixel, VDim>
     }
 
   // Try processing command line
-  try 
+  try
     {
     // The last parameter in the command line is the output file
     string fnOutput = argv[argc-1];
@@ -1225,10 +1233,10 @@ ImageConverter<TPixel, VDim>
     cerr << "What: " << exc.what() << endl;
     return -1;
     }
-  catch (...) 
-    { 
+  catch (...)
+    {
     cerr << "Unknown exception caught by convert3d" << endl;
-    return -1; 
+    return -1;
     }
 }
 
@@ -1246,16 +1254,16 @@ void ReadVecSpec(const char *vec_in, vnl_vector_fixed<double,VDim> &vout, VecSpe
 {
   // Set up the regular expressions for numerical string parsing
   boost::regex re1(
-    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)(mm|vox|%)?", 
+    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)(mm|vox|%)?",
     boost::regex_constants::icase);
   boost::regex re2(
     "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)x"
-    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)(mm|vox|%)?", 
+    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)(mm|vox|%)?",
     boost::regex_constants::icase);
   boost::regex re3(
     "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)x"
     "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)x"
-    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)(mm|vox|%)?", 
+    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)(mm|vox|%)?",
     boost::regex_constants::icase);
   boost::cmatch match;
 
@@ -1276,7 +1284,7 @@ void ReadVecSpec(const char *vec_in, vnl_vector_fixed<double,VDim> &vout, VecSpe
     vout[2] = atof(match[5].str().c_str());
     }
   else throw ConvertException("Invalid vector specification %s", vec_in);
- 
+
   // Get the type of spec. Luckily, all suffixes have the same length
   switch(match[match.size()-1].length()) {
   case 0: type = NONE; break;
@@ -1303,12 +1311,12 @@ ImageConverter<TPixel, VDim>
   if(type != VOXELS && type != PHYSICAL)
     throw ConvertException(
       "Invalid vector spec %s (must end with 'mm' or 'vox')", vec_in);
-  
+
   // If the vector is in vox units, map it to physical units
   if(type == VOXELS)
     {
     // Get the matrix
-    typename ImageType::TransformMatrixType MP = 
+    typename ImageType::TransformMatrixType MP =
       m_ImageStack.back()->GetVoxelSpaceToRASPhysicalSpaceMatrix();
 
     // Create the vector to multiply by
@@ -1360,7 +1368,7 @@ ImageConverter<TPixel, VDim>
       double qtile = 0.01 * val;
       if(m_ImageStack.size() == 0)
         throw ConvertException("Can't use intensity quantile spec with no image on stack");
-    
+
       // Allocate an array for sorting
       size_t n = m_ImageStack.back()->GetBufferedRegion().GetNumberOfPixels();
       TPixel *asort = new TPixel[n], *p = asort, *q = m_ImageStack.back()->GetBufferPointer();
@@ -1395,7 +1403,7 @@ ImageConverter<TPixel, VDim>
       if(m_PercentIntensityMode == PIM_QUANTILE)
         *verbose << "Quantile " << qtile << " maps to " << val << endl;
       else
-        *verbose << "Foreground quantile " << qtile <<  " (over " 
+        *verbose << "Foreground quantile " << qtile <<  " (over "
         << np << " voxels) maps to " << val << endl;
       }
     else
@@ -1445,7 +1453,7 @@ ImageConverter<TPixel, VDim>
       if(factor[i] <= 0)
         throw ConvertException("Non-positive percent size specification: %s", vec_in);
       tok = strtok(NULL, "x%");
-      } 
+      }
 
     if(i == 1)
       factor.fill(factor[0]);
@@ -1467,9 +1475,9 @@ ImageConverter<TPixel, VDim>
         throw ConvertException("Non-positive size specification: %s", vec_in);
       sz[i] = (unsigned long)(x);
       tok = strtok(NULL, "x");
-      } 
+      }
     }
-  
+
   delete vec;
   return sz;
 }
@@ -1498,7 +1506,7 @@ ImageConverter<TPixel, VDim>
       {
       factor[i] = atof(tok);
       tok = strtok(NULL, "x%");
-      } 
+      }
 
     if(i == 1)
       factor.fill(factor[0]);
@@ -1518,7 +1526,7 @@ ImageConverter<TPixel, VDim>
       int x = atoi(tok);
       idx[i] = (long)(x);
       tok = strtok(NULL, "x");
-      } 
+      }
     }
 
   delete vec;
@@ -1532,7 +1540,7 @@ ImageConverter<TPixel, VDim>
 {
   // Get the input image
   ImagePointer input = m_ImageStack.back();
-  
+
   // Simply make a copy of the input image on the stack
   ImagePointer output = ImageType::New();
   output->SetRegions(input->GetBufferedRegion());
@@ -1610,7 +1618,7 @@ ImageConverter<TPixel, VDim>
 
     // Set the in-loop flag
     m_InLoop = true;
-    
+
     // When the -endfor is encountered, the InLoop flag will be switched
     while(m_InLoop)
       narg += 1 + this->ProcessCommand(argc-narg, argv+narg);
@@ -1622,7 +1630,7 @@ ImageConverter<TPixel, VDim>
       out_stack.push_back(m_ImageStack.back());
     }
 
-  // Update the stack 
+  // Update the stack
   m_ImageStack = out_stack;
 
   // Return the number of arguments to the next command
@@ -1631,4 +1639,4 @@ ImageConverter<TPixel, VDim>
 
 template class ImageConverter<double, 2>;
 template class ImageConverter<double, 3>;
- 
+
