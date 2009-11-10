@@ -3,7 +3,7 @@
   Program:   Insight Segmentation & Registration Toolkit
   Module:    $RCSfile: itkVoxBoCUBImageIO.h,v $
   Language:  C++
-  Date:      $Date: 2008/11/08 01:42:03 $
+  Date:      $Date: 2009/11/10 16:19:49 $
   Version:   $1.0$
 
   Copyright (c) Insight Software Consortium. All rights reserved.
@@ -80,7 +80,7 @@ public:
 
 
   VoxBoCUBImageIO();
-  ~VoxBoCUBImageIO();
+  virtual ~VoxBoCUBImageIO();
   void PrintSelf(std::ostream& os, Indent indent) const;
   
 private:

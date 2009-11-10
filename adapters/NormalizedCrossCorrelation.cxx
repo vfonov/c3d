@@ -22,8 +22,6 @@ NormalizedCrossCorrelation<TPixel, VDim>
 
   Iterator it(iout, iout->GetBufferedRegion());
 
-  size_t k = 0;
-
   for(; !q1.IsAtEnd() && !q2.IsAtEnd(); ++q1, ++q2, ++it)
     {
     // Compute correlation at this location

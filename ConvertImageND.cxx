@@ -1,8 +1,5 @@
 #include "ConvertImageND.h"
 
-// We are using boost for command line parameter checking
-#include <boost/regex.hpp>
-
 #include "AddImages.h"
 #include "AntiAliasImage.h"
 #include "ApplyMetric.h"
@@ -57,6 +54,11 @@
 #include <cstring>
 #include <algorithm>
 
+// Support for regular expressions via KWSYS in ITK
+#include <itksys/RegularExpression.hxx>
+
+using namespace itksys;
+
 extern const char *ImageConverter_VERSION_STRING;
 
 // Helper function: read a double, throw exception if unreadable
@@ -68,6 +70,13 @@ double myatof(char *str)
     throw "strtod conversion failed";
   return d;
 };
+
+std::string str_to_lower(const char *input)
+{
+  std::string s(input);
+  std::transform(s.begin(), s.end(), s.begin(), (int(*)(int)) tolower);
+  return s;
+}
 
 
 template<class TPixel, unsigned int VDim>
@@ -450,8 +459,7 @@ ImageConverter<TPixel, VDim>
     CreateInterpolator<TPixel, VDim> adapter(this);
 
     // Interpret the interpolation type
-    m_Interpolation = argv[1];
-    std::transform(m_Interpolation.begin(), m_Interpolation.end(), m_Interpolation.begin(), (int(*)(int)) tolower);
+    m_Interpolation = str_to_lower(argv[1]);
 
     if(m_Interpolation == "nearestneighbor" || m_Interpolation == "nn" || m_Interpolation == "0")
       {
@@ -672,8 +680,8 @@ ImageConverter<TPixel, VDim>
     int nc, np;
 
     // A parameter can be optionally specified (how many components)
-    boost::regex re("[0-9]+", boost::regex_constants::icase);
-    if(boost::regex_match(argv[1], re))
+    RegularExpression re("[0-9]+");
+    if(re.find(argv[1]))
       { nc = atoi(argv[1]); np=2; }
     else
       { nc = m_ImageStack.size(); np = 1; }
@@ -705,7 +713,7 @@ ImageConverter<TPixel, VDim>
       {
       // Filenames are specified. Find out how many there are
       size_t nfiles = 0;
-      for(size_t i = 1; i < argc; i++)
+      for(int i = 1; i < argc; i++)
         {
         if(argv[i][0] != '-') nfiles++; else break;
         }
@@ -730,9 +738,8 @@ ImageConverter<TPixel, VDim>
   else if(cmd == "-orient")
     {
     // Read an RAS code
-    boost::regex re;
-    re.assign("[RASLPI]{3}", boost::regex_constants::icase);
-    if(boost::regex_match(argv[1], re))
+    RegularExpression re("[raslpi]{3}");
+    if(re.find(str_to_lower(argv[1])))
       { cout << "You supplied a RAS code" << endl; }
     else
       { cout << "I am expecting a matrix" << endl; }
@@ -778,8 +785,7 @@ ImageConverter<TPixel, VDim>
   else if(cmd == "-percent-intensity-mode" || cmd == "-pim")
     {
     // What does % mean when specifying intensities
-    string pim = argv[1];
-    std::transform(pim.begin(), pim.end(), pim.begin(), (int(*)(int)) tolower);
+    string pim = str_to_lower(argv[1]);
     if(pim == "quantile" || pim == "q")
       m_PercentIntensityMode = PIM_QUANTILE;
     else if(pim == "foregroundquantile" || pim == "fq")
@@ -1072,9 +1078,7 @@ ImageConverter<TPixel, VDim>
   // Output type specification
   else if(cmd == "-type")
     {
-    m_TypeId = argv[1];
-    int (*pf)(int) = tolower;
-    transform(m_TypeId.begin(), m_TypeId.end(), m_TypeId.begin(), pf);
+    m_TypeId = str_to_lower(argv[1]);
     return 1;
     }
 
@@ -1156,7 +1160,7 @@ ImageConverter<TPixel, VDim>
   else if(cmd == "-weighted-sum" || cmd == "-wsum")
     {
     std::vector<double> weights;
-    for(size_t i = 1; i < argc; i++)
+    for(int i = 1; i < argc; i++)
       if(argv[i][0] != '-')
         weights.push_back(atof(argv[i]));
       else break;
@@ -1253,40 +1257,43 @@ template<unsigned int VDim>
 void ReadVecSpec(const char *vec_in, vnl_vector_fixed<double,VDim> &vout, VecSpec &type)
 {
   // Set up the regular expressions for numerical string parsing
-  boost::regex re1(
-    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)(mm|vox|%)?",
-    boost::regex_constants::icase);
-  boost::regex re2(
+  RegularExpression re1(
+    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)(mm|vox|%)?");
+  RegularExpression re2(
     "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)x"
-    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)(mm|vox|%)?",
-    boost::regex_constants::icase);
-  boost::regex re3(
+    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)(mm|vox|%)?");
+  RegularExpression re3(
     "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)x"
     "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)x"
-    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)(mm|vox|%)?",
-    boost::regex_constants::icase);
-  boost::cmatch match;
+    "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)(mm|vox|%)?");
+
+  // Lowercase string
+  string vec = str_to_lower(vec_in);
+  string spec;
 
   // Check if it's a single-component specification
-  if(boost::regex_match(vec_in, match, re1))
+  if(VDim == 2 && re2.find(vec))
     {
-    vout.fill(atof(match[1].str().c_str()));
+    vout[0] = atof(re2.match(1).c_str());
+    vout[1] = atof(re2.match(3).c_str());
+    spec = re2.match(5);
     }
-  else if(VDim == 2 && boost::regex_match(vec_in, match, re2))
+  else if(VDim == 3 && re3.find(vec))
     {
-    vout[0] = atof(match[1].str().c_str());
-    vout[1] = atof(match[3].str().c_str());
+    vout[0] = atof(re3.match(1).c_str());
+    vout[1] = atof(re3.match(3).c_str());
+    vout[2] = atof(re3.match(5).c_str());
+    spec = re3.match(7);
     }
-  else if(VDim == 3 && boost::regex_match(vec_in, match, re3))
+  else if(re1.find(vec))
     {
-    vout[0] = atof(match[1].str().c_str());
-    vout[1] = atof(match[3].str().c_str());
-    vout[2] = atof(match[5].str().c_str());
+    vout.fill(atof(re1.match(1).c_str()));
+    spec = re1.match(3);
     }
   else throw ConvertException("Invalid vector specification %s", vec_in);
 
   // Get the type of spec. Luckily, all suffixes have the same length
-  switch(match[match.size()-1].length()) {
+  switch(spec.length()) {
   case 0: type = NONE; break;
   case 1: type = PERCENT; break;
   case 2: type = PHYSICAL; break;

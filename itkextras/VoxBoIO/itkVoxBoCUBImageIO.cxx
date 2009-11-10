@@ -3,8 +3,8 @@
   Program:   Insight Segmentation & Registration Toolkit
   Module:    $RCSfile: itkVoxBoCUBImageIO.cxx,v $
   Language:  C++
-  Date:      $Date: 2008/11/08 03:14:12 $
-  Version:   $Revision: 1.2 $  
+  Date:      $Date: 2009/11/10 16:19:49 $
+  Version:   $Revision: 1.3 $  
 
   Copyright (c) Insight Software Consortium. All rights reserved.
   See ITKCopyright.txt or http://www.itk.org/HTML/Copyright.htm for details.
@@ -45,6 +45,7 @@ public:
   virtual unsigned char ReadByte() = 0;
   virtual void ReadData(void *data, unsigned long bytes) = 0;
   virtual void WriteData(const void *data, unsigned long bytes) = 0;
+  virtual ~GenericCUBFileAdaptor() {}
 
   std::string ReadHeader()
     {
@@ -178,7 +179,7 @@ public:
       }
     }
   
-  ~DirectCUBFileAdaptor()
+  virtual ~DirectCUBFileAdaptor()
     {
     if(m_File)
       fclose(m_File);

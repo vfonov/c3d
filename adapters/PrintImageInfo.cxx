@@ -5,9 +5,9 @@
 
 template<class AnyType>
 bool
-try_print_metadata(itk::MetaDataDictionary &mdd, string key)
+try_print_metadata(itk::MetaDataDictionary &mdd, string key, AnyType deflt)
   {
-  AnyType value;
+  AnyType value = deflt;
   if(itk::ExposeMetaData<AnyType>(mdd, key, value))
     {
     cout << "    " << key << " = " << value << endl;
@@ -137,7 +137,8 @@ PrintImageInfo<TPixel, VDim>
       {
       // Get the metadata as a generic object
       string key = itMeta->first, v_string;
-      itk::SpatialOrientation::ValidCoordinateOrientationFlags v_oflags;
+      itk::SpatialOrientation::ValidCoordinateOrientationFlags v_oflags = 
+        itk::SpatialOrientation::ITK_COORDINATE_ORIENTATION_INVALID;
 
       if(itk::ExposeMetaData<string>(mdd, key, v_string))
         {
@@ -159,16 +160,16 @@ PrintImageInfo<TPixel, VDim>
       else 
         {
         bool rc = false;
-        if(!rc) rc |= try_print_metadata<double>(mdd, key);
-        if(!rc) rc |= try_print_metadata<float>(mdd, key);
-        if(!rc) rc |= try_print_metadata<int>(mdd, key);
-        if(!rc) rc |= try_print_metadata<unsigned int>(mdd, key);
-        if(!rc) rc |= try_print_metadata<long>(mdd, key);
-        if(!rc) rc |= try_print_metadata<unsigned long>(mdd, key);
-        if(!rc) rc |= try_print_metadata<short>(mdd, key);
-        if(!rc) rc |= try_print_metadata<unsigned short>(mdd, key);
-        if(!rc) rc |= try_print_metadata<char>(mdd, key);
-        if(!rc) rc |= try_print_metadata<unsigned char>(mdd, key);
+        if(!rc) rc |= try_print_metadata<double>(mdd, key, 0);
+        if(!rc) rc |= try_print_metadata<float>(mdd, key, 0);
+        if(!rc) rc |= try_print_metadata<int>(mdd, key, 0);
+        if(!rc) rc |= try_print_metadata<unsigned int>(mdd, key, 0);
+        if(!rc) rc |= try_print_metadata<long>(mdd, key, 0);
+        if(!rc) rc |= try_print_metadata<unsigned long>(mdd, key, 0);
+        if(!rc) rc |= try_print_metadata<short>(mdd, key, 0);
+        if(!rc) rc |= try_print_metadata<unsigned short>(mdd, key, 0);
+        if(!rc) rc |= try_print_metadata<char>(mdd, key, 0);
+        if(!rc) rc |= try_print_metadata<unsigned char>(mdd, key, 0);
 
         if(!rc)
           {
