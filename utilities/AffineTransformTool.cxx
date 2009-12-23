@@ -13,6 +13,9 @@
 #include "ConvertException.h"
 #include <iostream>
 
+#define RAS_TO_FSL 0
+#define FSL_TO_RAS 1
+
 using namespace std;
 
 // Typedefs
@@ -28,8 +31,9 @@ int usage()
     "  c3d_affine_tool [transform_files | options] \n"
     "Options: \n"
     "  -fsl2ras      Convert FSL to RAS\n"
-    "  -ref image    Set reference (fixed) image - only for -fsl2ras\n"
-    "  -src image    Set source (moving) image - only for -fsl2ras\n"
+    "  -ras2fsl      Convert RAS to FSL\n"
+    "  -ref image    Set reference (fixed) image - only for -fsl2ras and ras2fsl\n"
+    "  -src image    Set source (moving) image - only for -fsl2ras and -ras2fsl\n"
     "  -sform image  Read matrix from NIfTI sform\n"
     "  -o matfile    Write output matrix\n"
     "  -det          Print the determinant\n"
@@ -299,7 +303,7 @@ void ras_write(MatrixStack &vmat, const char *fname)
   fout.close();
 }
 
-void fsl_to_ras(MatrixStack &vmat, ImageType *ref, ImageType *mov)
+void fsl_to_ras(MatrixStack &vmat, ImageType *ref, ImageType *mov, short flag)
 {
   MatrixType m_fsl, m_spcref, m_spcmov, m_swpref, m_swpmov, m_ref, m_mov, m_out;
   m_fsl = vmat.back();
@@ -333,10 +337,18 @@ void fsl_to_ras(MatrixStack &vmat, ImageType *ref, ImageType *mov)
     }
 
   // Compute the output matrix
-  m_out = 
+  if (flag == FSL_TO_RAS)
+    m_out = 
     m_mov * vnl_inverse(m_spcmov) * m_swpmov *
     vnl_inverse(m_fsl) * 
     m_swpref * m_spcref * vnl_inverse(m_ref);
+
+  // NOTE: m_fsl is really m_ras here
+  if (flag == RAS_TO_FSL)
+    m_out =
+    vnl_inverse(vnl_inverse(m_swpmov) * m_spcmov* vnl_inverse(m_mov) *
+    m_fsl *
+    m_ref*vnl_inverse(m_spcref)*vnl_inverse(m_swpref));
 
   // Put it on the stack
   vmat.pop_back();
@@ -449,7 +461,12 @@ int main(int argc, char *argv[])
       else if(arg == "-fsl2ras")
         {
         // Convert FSL to RAS 
-        fsl_to_ras(vmat, ref, src);
+        fsl_to_ras(vmat, ref, src, RAS_TO_FSL);
+        }
+      else if(arg == "-ras2fsl")
+        {
+        // Convert FSL to RAS 
+        fsl_to_ras(vmat, ref, src, FSL_TO_RAS);
         }
       else if(arg == "-mult")
         {
