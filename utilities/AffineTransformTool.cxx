@@ -461,12 +461,12 @@ int main(int argc, char *argv[])
       else if(arg == "-fsl2ras")
         {
         // Convert FSL to RAS 
-        fsl_to_ras(vmat, ref, src, RAS_TO_FSL);
+        fsl_to_ras(vmat, ref, src, FSL_TO_RAS);
         }
       else if(arg == "-ras2fsl")
         {
         // Convert FSL to RAS 
-        fsl_to_ras(vmat, ref, src, FSL_TO_RAS);
+        fsl_to_ras(vmat, ref, src, RAS_TO_FSL);
         }
       else if(arg == "-mult")
         {
