@@ -14,6 +14,7 @@
 #include "CreateImage.h"
 #include "CreateInterpolator.h"
 #include "ExtractRegion.h"
+#include "ExtractSlice.h"
 #include "GeneralLinearModel.h"
 #include "HistogramMatch.h"
 #include "ImageERF.h"
@@ -183,6 +184,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -scale" << endl;
   cout << "    -shift" << endl;
   cout << "    -signed-distance-transform, -sdt" << endl;
+  cout << "    -slice" << endl;
   cout << "    -smooth" << endl;
   cout << "    -spacing" << endl;
   cout << "    -split" << endl;
@@ -864,17 +866,17 @@ ImageConverter<TPixel, VDim>
     return 0;
     }
 
-  else if (cmd == "-region")
+  else if (cmd == "-slice")
     {
-    // Get the position and index for the region
-    RegionType bbox;
-    bbox.SetIndex(ReadIndexVector(argv[1]));
-    bbox.SetSize(ReadSizeVector(argv[2]));
+    string axis( argv[1] );
+    int pos = atoi(argv[2]);
+    char * filename = argv[3];
 
-    *verbose << "Extracting Subregion in #" << m_ImageStack.size() << endl;
-    ExtractRegion<TPixel, VDim> adapter(this);
-    adapter(bbox);
-    return 2;
+    *verbose << "Extracting slice in #" << m_ImageStack.size() << endl;
+    ExtractSlice<TPixel, VDim> adapter(this);
+    adapter(axis, pos, filename);
+
+    return 3;
     }
 
   else if (cmd == "-replace")

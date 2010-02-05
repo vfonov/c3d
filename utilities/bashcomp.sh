@@ -74,6 +74,7 @@ function _c3d()
   opts="$opts -scale"
   opts="$opts -shift"
   opts="$opts -signed-distance-transform  -sdt"
+  opts="$opts -slice"
   opts="$opts -smooth"
   opts="$opts -spacing"
   opts="$opts -split"

@@ -45,6 +45,7 @@ SET(SOURCES
   adapters/CreateImage.cxx
   adapters/CreateInterpolator.cxx
   adapters/ExtractRegion.cxx
+  adapters/ExtractSlice.cxx
   adapters/HistogramMatch.cxx
   adapters/ImageERF.cxx
   adapters/ImageLaplacian.cxx
