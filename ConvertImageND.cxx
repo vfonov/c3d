@@ -858,6 +858,20 @@ ImageConverter<TPixel, VDim>
     return 0;
     }
 
+  else if (cmd == "-region")
+    {
+    // Get the position and index for the region
+    RegionType bbox;
+    bbox.SetIndex(ReadIndexVector(argv[1]));
+    bbox.SetSize(ReadSizeVector(argv[2]));
+
+    *verbose << "Extracting Subregion in #" << m_ImageStack.size() << endl;
+    ExtractRegion<TPixel, VDim> adapter(this);
+    adapter(bbox);
+    return 2;
+    }
+
+
   else if(cmd == "-reciprocal")
     {
     // Multiply by the reciprocal (for time being at least)
