@@ -24,6 +24,7 @@
 #include "LevelSetSegmentation.h"
 #include "MathematicalMorphology.h"
 #include "MixtureModel.h"
+#include "MRFVote.h"
 #include "MultiplyImages.h"
 #include "NormalizedCrossCorrelation.h"
 #include "PadImage.h"
@@ -1113,6 +1114,15 @@ ImageConverter<TPixel, VDim>
     Vote<TPixel, VDim> adapter(this);
     adapter(false);
     return 0;
+    }
+
+  else if(cmd == "-vote-mrf")
+    {
+    double beta = atof(argv[1]);
+    size_t iter = atoi(argv[2]);
+    MRFVote<TPixel, VDim> adapter(this);
+    adapter(beta, iter, false);
+    return 2;
     }
 
   else if(cmd == "-vote-label")
