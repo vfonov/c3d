@@ -24,7 +24,7 @@
 #include "LevelSetSegmentation.h"
 #include "MathematicalMorphology.h"
 #include "MixtureModel.h"
-#include "MRFVote.h"
+//#include "MRFVote.h"
 #include "MultiplyImages.h"
 #include "NormalizedCrossCorrelation.h"
 #include "PadImage.h"
@@ -38,6 +38,7 @@
 #include "ResliceImage.h"
 #include "SampleImage.h"
 #include "ScaleShiftImage.h"
+#include "SetSform.h"
 #include "SignedDistanceTransform.h"
 #include "SmoothImage.h"
 #include "SplitMultilabelImage.h"
@@ -183,6 +184,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -rms" << endl;
   cout << "    -round" << endl;
   cout << "    -scale" << endl;
+  cout << "    -set-sform" << endl;
   cout << "    -shift" << endl;
   cout << "    -signed-distance-transform, -sdt" << endl;
   cout << "    -slice" << endl;
@@ -881,6 +883,17 @@ ImageConverter<TPixel, VDim>
     return 0;
     }
 
+  else if (cmd == "-set-sform")
+    {
+    string fn_tran( argv[1] );
+
+    *verbose << "Setting sform of image #" << m_ImageStack.size() << endl;
+    SetSform<TPixel, VDim> adapter(this);
+    adapter( fn_tran );
+
+    return 1;
+    }
+
   else if (cmd == "-slice")
     {
     string axis( argv[1] );
@@ -1115,16 +1128,16 @@ ImageConverter<TPixel, VDim>
     adapter(false);
     return 0;
     }
-
-  else if(cmd == "-vote-mrf")
-    {
-    double beta = atof(argv[1]);
-    size_t iter = atoi(argv[2]);
-    MRFVote<TPixel, VDim> adapter(this);
-    adapter(beta, iter, false);
-    return 2;
-    }
-
+//
+//  else if(cmd == "-vote-mrf")
+//    {
+//    double beta = atof(argv[1]);
+//    size_t iter = atoi(argv[2]);
+//    MRFVote<TPixel, VDim> adapter(this);
+//    adapter(beta, iter, false);
+//    return 2;
+//    }
+//
   else if(cmd == "-vote-label")
     {
     UpdateMetadataKey<TPixel, VDim> adapter(this);

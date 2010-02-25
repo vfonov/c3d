@@ -167,6 +167,71 @@ public:
     };
 
   /** 
+   * Set a matrix that maps points voxel coordinates to RAS coordinates
+   */
+  void SetVoxelSpaceToRASPhysicalSpaceMatrix(vnl_matrix<double> mat)
+    {
+    // Generate intermediate terms
+    vnl_matrix<double> m_dir, m_ras_matrix, m_dist;
+    vnl_diag_matrix<double> m_ras_to_lps, m_scale;
+    vnl_vector<double> v_origin ;
+    vnl_vector<double> m_spacing(VImageDimension, 0.0);
+
+    // Get the dim x dim submatrix from mat
+    vnl_matrix<double> smat(VImageDimension,VImageDimension,0.0);
+    for (size_t i=0; i< VImageDimension; i++)
+      for (size_t j=0; j< VImageDimension; j++)
+        smat[i][j] = mat[i][j];
+    //smat = mat.get_n_rows(0, VImageDimension).get_n_columns(0, VImageDimension);
+    // Get the origin
+    m_ras_to_lps.set(vnl_vector<double>(VImageDimension, 1.0));
+    m_ras_to_lps[0] = -1;
+    m_ras_to_lps[1] = -1;
+    vnl_vector<double> v_ras_offset(VImageDimension,0.0);
+    v_ras_offset.fill(0.0);
+    for (size_t i=0; i< VImageDimension; i++)
+      v_ras_offset[i] = mat[i][VImageDimension];
+    v_origin = m_ras_to_lps * v_ras_offset;
+
+    // Get the Spacing
+    // First, create a matrix of the form [1 0 0; 0 1 0; 0 0 1; 0 0 0] to get distances between consecutive voxels
+    // along each axis. When RAS mat will be applied to this matrix, we'll have 3 distance vectors
+    vnl_diag_matrix<double> offsetmat(VImageDimension+1, VImageDimension);
+    offsetmat.fill(0.0);
+    for (size_t i=0; i < VImageDimension+1; i++)
+      offsetmat[i]=1.0;
+    m_dist = mat * offsetmat;
+    // Then compute magnitude of the distance vectors, that's our spacing
+    for (size_t i=0; i< VImageDimension; i++)
+    {
+      vnl_vector<double> distcol(m_dist.get_column(i));
+      m_spacing[i] = distcol.magnitude();
+    }
+    m_scale.set(m_spacing);
+    
+    // Get the direction
+    m_scale.invert_in_place();
+    m_dir = m_ras_to_lps * smat * m_scale;
+    
+    // Set everything
+    itk::Matrix<double, VImageDimension, VImageDimension> dir;
+    dir.SetIdentity();
+    for (size_t i=0; i< VImageDimension; i++)
+      for (size_t j=0; j< VImageDimension; j++)
+        dir[i][j] = m_dir[i][j];
+    this->SetDirection(dir);
+    double origin[VImageDimension];
+    for (size_t i=0; i< VImageDimension; i++)
+      origin[i] = v_origin[i];
+    this->SetOrigin(origin);
+    double spacing[VImageDimension];
+    for (size_t i=0; i< VImageDimension; i++)
+      spacing[i] = m_spacing[i];
+    this->SetSpacing(spacing);
+     
+    };
+
+  /** 
    * Get a matrix that maps points in the x * spacing + origin space to
    * the RAS space
    */
@@ -188,6 +253,7 @@ public:
 
     return mat;
     }
+
 
 
 protected:

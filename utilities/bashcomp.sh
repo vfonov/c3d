@@ -72,6 +72,7 @@ function _c3d()
   opts="$opts -rms"
   opts="$opts -round"
   opts="$opts -scale"
+  opts="$opts -set-sform"
   opts="$opts -shift"
   opts="$opts -signed-distance-transform  -sdt"
   opts="$opts -slice"

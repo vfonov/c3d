@@ -55,7 +55,7 @@ SET(SOURCES
   adapters/LevelSetSegmentation.cxx
   adapters/MathematicalMorphology.cxx
   adapters/MixtureModel.cxx
-  adapters/MRFVote.cxx
+#  adapters/MRFVote.cxx
   adapters/MultiplyImages.cxx
   adapters/NormalizedCrossCorrelation.cxx
   adapters/PadImage.cxx
@@ -69,6 +69,7 @@ SET(SOURCES
   adapters/ResliceImage.cxx
   adapters/SampleImage.cxx
   adapters/ScaleShiftImage.cxx
+  adapters/SetSform.cxx
   adapters/SignedDistanceTransform.cxx
   adapters/SmoothImage.cxx
   adapters/SplitMultilabelImage.cxx
