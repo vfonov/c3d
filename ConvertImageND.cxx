@@ -635,6 +635,12 @@ ImageConverter<TPixel, VDim>
     return 1;
     }
 
+  else if(cmd == "-ncor" || cmd == "-normalized-correlation")
+    {
+    ApplyMetric<TPixel, VDim> adapter(this);
+    adapter("NCOR");
+    return 0;
+    }
   else if(cmd == "-nmi" || cmd == "-normalized-mutual-info")
     {
     ApplyMetric<TPixel, VDim> adapter(this);

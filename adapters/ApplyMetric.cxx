@@ -1,4 +1,5 @@
 #include "ApplyMetric.h"
+#include "itkNormalizedCorrelationImageToImageMetric.h"
 #include "itkMutualInformationHistogramImageToImageMetric.h"
 #include "itkNormalizedMutualInformationHistogramImageToImageMetric.h"
 #include "itkMattesMutualInformationImageToImageMetric.h"
@@ -29,12 +30,6 @@ ApplyMetric<TPixel, VDim>
       itk::MutualInformationHistogramImageToImageMetric<
         ImageType,ImageType>::New();
     }
-  else if(!strcmp(metric_name,"NMI"))
-    {
-    metric = 
-      itk::NormalizedMutualInformationHistogramImageToImageMetric<
-        ImageType,ImageType>::New();
-    }
   else if(!strcmp(metric_name,"MMI"))
     {
     metric = 
@@ -45,6 +40,18 @@ ApplyMetric<TPixel, VDim>
     {
     metric = 
       itk::MeanSquaresImageToImageMetric<
+        ImageType,ImageType>::New();
+    }
+  else if(!strcmp(metric_name,"NCOR"))
+    {
+    metric = 
+      itk::NormalizedCorrelationImageToImageMetric<
+        ImageType,ImageType>::New();
+    }
+  else if(!strcmp(metric_name,"NMI"))
+    {
+    metric = 
+      itk::NormalizedMutualInformationHistogramImageToImageMetric<
         ImageType,ImageType>::New();
     }
   else throw ConvertException("Unknown metric %s", metric_name);
