@@ -608,6 +608,18 @@ ImageConverter<TPixel, VDim>
     return 1 + 2 * ncomp;
     }
 
+  else if(cmd == "-mmi" || cmd == "-mattes-mutual-info")
+    {
+    ApplyMetric<TPixel, VDim> adapter(this);
+    adapter("MMI");
+    return 0;
+    }
+  else if(cmd == "-msq" || cmd == "-mean-square")
+    {
+    ApplyMetric<TPixel, VDim> adapter(this);
+    adapter("MSQ");
+    return 0;
+    }
   else if(cmd == "-multiply" || cmd == "-times")
     {
     MultiplyImages<TPixel, VDim> adapter(this);

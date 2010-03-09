@@ -1,6 +1,8 @@
 #include "ApplyMetric.h"
 #include "itkMutualInformationHistogramImageToImageMetric.h"
 #include "itkNormalizedMutualInformationHistogramImageToImageMetric.h"
+#include "itkMattesMutualInformationImageToImageMetric.h"
+#include "itkMeanSquaresImageToImageMetric.h"
 #include "itkNearestNeighborInterpolateImageFunction.h"
 #include "itkAffineTransform.h"
 
@@ -31,6 +33,18 @@ ApplyMetric<TPixel, VDim>
     {
     metric = 
       itk::NormalizedMutualInformationHistogramImageToImageMetric<
+        ImageType,ImageType>::New();
+    }
+  else if(!strcmp(metric_name,"MMI"))
+    {
+    metric = 
+      itk::MattesMutualInformationImageToImageMetric<
+        ImageType,ImageType>::New();
+    }
+  else if(!strcmp(metric_name,"MSQ"))
+    {
+    metric = 
+      itk::MeanSquaresImageToImageMetric<
         ImageType,ImageType>::New();
     }
   else throw ConvertException("Unknown metric %s", metric_name);
