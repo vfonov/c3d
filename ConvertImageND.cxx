@@ -585,8 +585,15 @@ ImageConverter<TPixel, VDim>
   else if(cmd == "-mi" || cmd == "-mutual-info")
     {
     ApplyMetric<TPixel, VDim> adapter(this);
-    adapter("MI");
-    return 0;
+    int nret = 0;
+    string fn("none");
+    if (argc == 2)
+      {
+      fn = argv[1];
+      nret = 1;
+      }
+    adapter("MI", fn.c_str());
+    return nret;
     }
 
   else if(cmd == "-mixture" || cmd == "-mixture-model")
@@ -611,14 +618,28 @@ ImageConverter<TPixel, VDim>
   else if(cmd == "-mmi" || cmd == "-mattes-mutual-info")
     {
     ApplyMetric<TPixel, VDim> adapter(this);
-    adapter("MMI");
-    return 0;
+    int nret = 0;
+    string fn("none");
+    if (argc == 2)
+      {
+      fn = argv[1];
+      nret = 1;
+      }
+    adapter("MMI", fn.c_str());
+    return nret;
     }
   else if(cmd == "-msq" || cmd == "-mean-square")
     {
     ApplyMetric<TPixel, VDim> adapter(this);
-    adapter("MSQ");
-    return 0;
+    int nret = 0;
+    string fn("none");
+    if (argc == 2)
+      {
+      fn = argv[1];
+      nret = 1;
+      }
+    adapter("MSQ", fn.c_str());
+    return nret;
     }
   else if(cmd == "-multiply" || cmd == "-times")
     {
@@ -638,14 +659,28 @@ ImageConverter<TPixel, VDim>
   else if(cmd == "-ncor" || cmd == "-normalized-correlation")
     {
     ApplyMetric<TPixel, VDim> adapter(this);
-    adapter("NCOR");
-    return 0;
+    int nret = 0;
+    string fn("none");
+    if (argc == 2)
+      {
+      fn = argv[1];
+      nret = 1;
+      }
+    adapter("NCOR", fn.c_str());
+    return nret;
     }
   else if(cmd == "-nmi" || cmd == "-normalized-mutual-info")
     {
     ApplyMetric<TPixel, VDim> adapter(this);
-    adapter("NMI");
-    return 0;
+    int nret = 0;
+    string fn("none");
+    if (argc == 2)
+      {
+      fn = argv[1];
+      nret = 1;
+      }
+    adapter("NMI", fn.c_str());
+    return nret;
     }
 
   else if(cmd == "-nomcs" || cmd == "-no-multicomponent-split")

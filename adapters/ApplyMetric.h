@@ -12,7 +12,7 @@ public:
 
   ApplyMetric(Converter *c) : c(c) {}
 
-  void operator() (const char *metric);
+  void operator() (const char *metric, const char *tran_fn);
 
 private:
   Converter *c;
