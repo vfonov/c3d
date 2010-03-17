@@ -151,19 +151,19 @@ ApplyMetric<TPixel, VDim>
 
   double mvalue;
 
-  if (!strcmp(fn_ftran,"none"))
+  if (!strcmp(fn_mtran,"none"))
     {
     tran->SetIdentity();
     metric->SetInterpolator(NNInterpolatorType::New());
     }
-  else if (!strcmp(fn_mtran,"none"))
+  else if (!strcmp(fn_ftran,"none"))
     {
     // Read the matrix
     itk::Matrix<double,VDim+1,VDim+1> matrix;
     itk::Matrix<double,VDim,VDim> amat;
     itk::Vector<double, VDim> aoff;
 
-    ReadMatrix(fn_ftran, matrix);
+    ReadMatrix(fn_mtran, matrix);
     Flip_RAS_to_LPS(matrix, amat, aoff);
 
     // Put the values in the transform
@@ -172,7 +172,7 @@ ApplyMetric<TPixel, VDim>
     metric->SetInterpolator(LinInterpolatorType::New());
     }
 
-  if (!strcmp(fn_mtran,"none"))
+  if (!strcmp(fn_ftran,"none"))
     {  
     //metric->DebugOn();
 

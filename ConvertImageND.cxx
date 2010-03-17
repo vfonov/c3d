@@ -590,12 +590,12 @@ ImageConverter<TPixel, VDim>
     string fnm("none");
     if (argc > 1)
       {
-      fnf = argv[1];
+      fnm = argv[1];
       nret = 1;
       }
     if (argc == 3)
       {
-      fnm = argv[2];
+      fnf = argv[2];
       nret = 2;
       }
     adapter("MI", fnf.c_str(), fnm.c_str());
@@ -629,12 +629,12 @@ ImageConverter<TPixel, VDim>
     string fnm("none");
     if (argc > 1)
       {
-      fnf = argv[1];
+      fnm = argv[1];
       nret = 1;
       }
     if (argc == 3)
       {
-      fnm = argv[2];
+      fnf = argv[2];
       nret = 2;
       }
     adapter("MMI", fnf.c_str(), fnm.c_str());
@@ -648,12 +648,12 @@ ImageConverter<TPixel, VDim>
     string fnm("none");
     if (argc > 1)
       {
-      fnf = argv[1];
+      fnm = argv[1];
       nret = 1;
       }
     if (argc == 3)
       {
-      fnm = argv[2];
+      fnf = argv[2];
       nret = 2;
       }
     adapter("MSQ", fnf.c_str(), fnm.c_str());
@@ -682,12 +682,12 @@ ImageConverter<TPixel, VDim>
     string fnm("none");
     if (argc > 1)
       {
-      fnf = argv[1];
+      fnm = argv[1];
       nret = 1;
       }
     if (argc == 3)
       {
-      fnm = argv[2];
+      fnf = argv[2];
       nret = 2;
       }
     adapter("NCOR", fnf.c_str(), fnm.c_str());
@@ -701,12 +701,12 @@ ImageConverter<TPixel, VDim>
     string fnm("none");
     if (argc > 1)
       {
-      fnf = argv[1];
+      fnm = argv[1];
       nret = 1;
       }
     if (argc == 3)
       {
-      fnm = argv[2];
+      fnf = argv[2];
       nret = 2;
       }
     adapter("NMI", fnf.c_str(), fnm.c_str());
