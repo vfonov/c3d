@@ -41,6 +41,11 @@ Rank<TPixel, VDim>
       sortvec[j] = std::pair<double,size_t>(c->m_ImageStack[j]->GetBufferPointer()[k], j);
       }
 
+    if(k == 189552)
+      for(size_t j = 0; j < n; j++)
+        printf("J = %i, v = %f, r = %i\n", j, sortvec[j].first, sortvec[j].second);
+      
+
     std::sort(sortvec.begin(), sortvec.end());
 
     for(size_t j = 0; j < n; j++)

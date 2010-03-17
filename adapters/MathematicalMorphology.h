@@ -12,7 +12,7 @@ public:
 
   MathematicalMorphology(Converter *c) : c(c) {}
 
-  void operator() (bool erode, TPixel value, SizeType radius);
+  void operator() (bool erode, TPixel value, SizeType size);
 
 private:
   Converter *c;

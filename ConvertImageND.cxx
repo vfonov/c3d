@@ -1549,8 +1549,8 @@ ImageConverter<TPixel, VDim>
     for(i = 0; i < VDim && tok != NULL; i++)
       {
       factor[i] = atof(tok);
-      if(factor[i] <= 0)
-        throw ConvertException("Non-positive percent size specification: %s", vec_in);
+      if(factor[i] < 0)
+        throw ConvertException("Negative percent size specification: %s", vec_in);
       tok = strtok(NULL, "x%");
       }
 
@@ -1570,8 +1570,8 @@ ImageConverter<TPixel, VDim>
       if(tok == NULL)
         throw ConvertException("Invalid size specification: %s", vec_in);
       int x = atoi(tok);
-      if(x <= 0)
-        throw ConvertException("Non-positive size specification: %s", vec_in);
+      if(x < 0)
+        throw ConvertException("Negative size specification: %s", vec_in);
       sz[i] = (unsigned long)(x);
       tok = strtok(NULL, "x");
       }

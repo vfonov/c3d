@@ -85,7 +85,7 @@ MRFVote<TPixel, VDim>
 
   // Create neighborhood iterator
   typedef itk::NeighborhoodIterator<ImageType> NeighborIterType;
-  NeighborIterType::RadiusType radius;
+  typename NeighborIterType::RadiusType radius;
   radius.Fill(1);
   NeighborIterType nit(radius, ilabel, r_inner);
   nit.SetNeedToUseBoundaryCondition(false);
