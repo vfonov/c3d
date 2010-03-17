@@ -586,13 +586,19 @@ ImageConverter<TPixel, VDim>
     {
     ApplyMetric<TPixel, VDim> adapter(this);
     int nret = 0;
-    string fn("none");
-    if (argc == 2)
+    string fnf("none");
+    string fnm("none");
+    if (argc > 1)
       {
-      fn = argv[1];
+      fnf = argv[1];
       nret = 1;
       }
-    adapter("MI", fn.c_str());
+    if (argc == 3)
+      {
+      fnm = argv[2];
+      nret = 2;
+      }
+    adapter("MI", fnf.c_str(), fnm.c_str());
     return nret;
     }
 
@@ -619,26 +625,38 @@ ImageConverter<TPixel, VDim>
     {
     ApplyMetric<TPixel, VDim> adapter(this);
     int nret = 0;
-    string fn("none");
-    if (argc == 2)
+    string fnf("none");
+    string fnm("none");
+    if (argc > 1)
       {
-      fn = argv[1];
+      fnf = argv[1];
       nret = 1;
       }
-    adapter("MMI", fn.c_str());
+    if (argc == 3)
+      {
+      fnm = argv[2];
+      nret = 2;
+      }
+    adapter("MMI", fnf.c_str(), fnm.c_str());
     return nret;
     }
   else if(cmd == "-msq" || cmd == "-mean-square")
     {
     ApplyMetric<TPixel, VDim> adapter(this);
     int nret = 0;
-    string fn("none");
-    if (argc == 2)
+    string fnf("none");
+    string fnm("none");
+    if (argc > 1)
       {
-      fn = argv[1];
+      fnf = argv[1];
       nret = 1;
       }
-    adapter("MSQ", fn.c_str());
+    if (argc == 3)
+      {
+      fnm = argv[2];
+      nret = 2;
+      }
+    adapter("MSQ", fnf.c_str(), fnm.c_str());
     return nret;
     }
   else if(cmd == "-multiply" || cmd == "-times")
@@ -660,26 +678,38 @@ ImageConverter<TPixel, VDim>
     {
     ApplyMetric<TPixel, VDim> adapter(this);
     int nret = 0;
-    string fn("none");
-    if (argc == 2)
+    string fnf("none");
+    string fnm("none");
+    if (argc > 1)
       {
-      fn = argv[1];
+      fnf = argv[1];
       nret = 1;
       }
-    adapter("NCOR", fn.c_str());
+    if (argc == 3)
+      {
+      fnm = argv[2];
+      nret = 2;
+      }
+    adapter("NCOR", fnf.c_str(), fnm.c_str());
     return nret;
     }
   else if(cmd == "-nmi" || cmd == "-normalized-mutual-info")
     {
     ApplyMetric<TPixel, VDim> adapter(this);
     int nret = 0;
-    string fn("none");
-    if (argc == 2)
+    string fnf("none");
+    string fnm("none");
+    if (argc > 1)
       {
-      fn = argv[1];
+      fnf = argv[1];
       nret = 1;
       }
-    adapter("NMI", fn.c_str());
+    if (argc == 3)
+      {
+      fnm = argv[2];
+      nret = 2;
+      }
+    adapter("NMI", fnf.c_str(), fnm.c_str());
     return nret;
     }
 
