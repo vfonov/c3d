@@ -45,6 +45,7 @@ int usage()
     "  -irtk file    Import IRTK .dof format transform\n"
     "  -oirtk file   Export IRTK .dof format transform\n"
     "  -info         Print matrix\n"
+    "  -info-full    Print matrix and more detail about the transform\n"
     ;
   return -1;
 }
@@ -164,6 +165,103 @@ void irtk_read(MatrixStack &vmat, const char *fname)
   vmat.push_back(M);
 }
 
+void quart_print(vnl_matrix_fixed<double, 3, 3> &A )
+{
+  const double epsilon = vcl_numeric_limits<double>::epsilon();
+  double m_X, m_Y, m_Z, m_W;
+
+  // Flip the entries that must be flipped to convert to LPS
+  A(2,0) *= -1; A(2,1) *= -1;
+  A(0,2) *= -1; A(1,2) *= -1;
+
+  // QR decomposition
+  vnl_qr<double> qr(A);
+  vnl_matrix_fixed<double, 3, 3> m = qr.Q(), R = qr.R(), F;
+
+  F.set_identity();
+  for(size_t i = 0; i < 3; i++)
+    if(R(i,i) < 0)
+      F(i,i) = -1;
+
+  // Scale Q and R by the flip matrix
+  m = m * F;
+  R = F * R;
+
+
+  printf("Rotation matrix:\n");
+  for(size_t i = 0; i < 3; i++)
+    printf("%12.5f   %12.5f   %12.5f\n", m(i,0), m(i,1), m(i,2));
+
+
+  double trace = m(0,0) + m(1,1) + m(2,2) + 1.0;
+//std::cout << "trace: " << trace << " epsilon: " << vcl_numeric_limits<T>::epsilon() << std::endl;
+
+  if( trace > epsilon)
+    {
+    const double s = 0.5 / vcl_sqrt(trace);
+    m_W = 0.25 / s;
+    m_X = (m(2,1) - m(1,2)) * s;
+    m_Y = (m(0,2) - m(2,0)) * s;
+    m_Z = (m(1,0) - m(0,1)) * s;
+//std::cout << "opt 1: w " << m_W << " x " << m_X << " y " << m_Y << " z " << m_Z << std::endl;
+    }
+  else
+    {
+    if( m(0,0) > m(1,1) && m(0,0) > m(2,2) )
+      {
+      const double s = 2.0 * vcl_sqrt(1.0 + m(0,0) - m(1,1) - m(2,2));
+      m_X = 0.25 * s;
+      m_Y = (m(0,1) + m(1,0)) / s;
+      m_Z = (m(0,2) + m(2,0)) / s;
+      m_W = (m(1,2) - m(2,1)) / s;
+//std::cout << "opt 2: w " << m_W << " x " << m_X << " y " << m_Y << " z " << m_Z << std::endl;
+      }
+    else
+      {
+      if( m(1,1) > m(2,2) )
+        {
+        const double s = 2.0 * vcl_sqrt(1.0 + m(1,1) - m(0,0) - m(2,2));
+        m_X = (m(0,1) + m(1,0)) / s;
+        m_Y = 0.25 * s;
+        m_Z = (m(1,2) + m(2,1)) / s;
+        m_W = (m(0,2) - m(2,0)) / s;
+//std::cout << "opt 3: w " << m_W << " x " << m_X << " y " << m_Y << " z " << m_Z << std::endl;
+        }
+      else
+        {
+        const double s = 2.0 * vcl_sqrt(1.0 + m(2,2) - m(0,0) - m(1,1));
+        m_X = (m(0,2) + m(2,0)) / s;
+        m_Y = (m(1,2) + m(2,1)) / s;
+        m_Z = 0.25 * s;
+        m_W = (m(0,1) - m(1,0)) / s;
+//std::cout << "opt 4: w " << m_W << " x " << m_X << " y " << m_Y << " z " << m_Z << std::endl;
+        }
+      }
+    }
+  double mag = vcl_sqrt( m_X*m_X + m_Y*m_Y + m_Z*m_Z + m_W*m_W );
+  m_X /= mag;
+  m_Y /= mag;
+  m_Z /= mag;
+  m_W /= mag;
+
+  printf("Quaternion:\n");
+  printf("%12.5f   %12.5f   %12.5f  %12.5f\n", m_X, m_Y, m_Z, m_W);
+
+  double K = vcl_sqrt( m_X*m_X + m_Y*m_Y + m_Z*m_Z );
+  double angle = (180.0/vnl_math::pi) * 2.0 * asin( K );
+  double axis[3];
+  axis[0] = m_X/K;
+  axis[1] = m_Y/K;
+  axis[2] = m_Z/K;
+  
+  printf("Rotation angle:\n");
+  printf("%f degrees\n", angle); 
+
+  printf("Rotation axis:\n");
+  printf("%12.5f   %12.5f   %12.5f\n", axis[0], axis[1], axis[2] );
+
+}
+
 void irtk_write(MatrixStack &vmat, const char *fname)
 {
   // Get the current matrix
@@ -213,6 +311,7 @@ void irtk_write(MatrixStack &vmat, const char *fname)
   k[0] = atan(K(0,1)) * 180. / vnl_math::pi;
   k[1] = atan(K(1,2)) * 180. / vnl_math::pi;
   k[2] = atan(K(0,2)) * 180. / vnl_math::pi;
+
 
   // Print the transformation parameters
   printf("DOF parameters: T=(%f, %f, %f); R = (%f, %f, %f); S = (%f, %f, %f); K = (%f, %f, %f)\n",
@@ -405,12 +504,22 @@ void ras_sform(MatrixStack &vmat, const char *fname)
   vmat.push_back(m);
 }
 
-void ras_print(MatrixStack &vmat)
+
+void ras_print(MatrixStack &vmat, bool isfullinfo)
 {
   MatrixType m = vmat.back();
   printf("Matrix #%d:\n", (int) vmat.size());
   for(size_t i = 0; i < 4; i++)
     printf("%12.5f   %12.5f   %12.5f   %12.5f\n", m(i,0), m(i,1), m(i,2), m(i,3));
+
+  if ( isfullinfo )
+    {// Extract the 3x3 affine matrix
+    typedef vnl_matrix_fixed<double, 3, 3> Mat33;
+    Mat33 A = m.extract(3,3);
+
+    quart_print(A);
+    }
+
 }
 
 void ras_mult(MatrixStack &vmat)
@@ -486,7 +595,11 @@ int main(int argc, char *argv[])
         }
       else if(arg == "-info")
         {
-        ras_print(vmat);
+        ras_print(vmat, false);
+        }
+      else if(arg == "-info-full")
+        {
+        ras_print(vmat, true);
         }
       else if(arg == "-sform")
         {
