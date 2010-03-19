@@ -165,14 +165,20 @@ void irtk_read(MatrixStack &vmat, const char *fname)
   vmat.push_back(M);
 }
 
-void quart_print(vnl_matrix_fixed<double, 3, 3> &A )
+void quart_print(MatrixType &mat )
 {
   const double epsilon = vcl_numeric_limits<double>::epsilon();
   double m_X, m_Y, m_Z, m_W;
 
   // Flip the entries that must be flipped to convert to LPS
-  A(2,0) *= -1; A(2,1) *= -1;
-  A(0,2) *= -1; A(1,2) *= -1;
+  mat(2,0) *= -1; mat(2,1) *= -1;
+  mat(0,2) *= -1; mat(1,2) *= -1;
+  mat(0,3) *= -1; mat(1,3) *= -1;
+
+
+  typedef vnl_matrix_fixed<double, 3, 3> Mat33;
+  Mat33 A = mat.extract(3,3);
+
 
   // QR decomposition
   vnl_qr<double> qr(A);
@@ -191,6 +197,30 @@ void quart_print(vnl_matrix_fixed<double, 3, 3> &A )
   printf("Rotation matrix:\n");
   for(size_t i = 0; i < 3; i++)
     printf("%12.5f   %12.5f   %12.5f\n", m(i,0), m(i,1), m(i,2));
+
+  double r[3], s[3], k[3];
+  // Get the rotation angles
+  r[0] = atan2(m(1,2), m(2,2)) * 180. / vnl_math::pi;
+  r[1] = asin(-m(0,2)) * 180. / vnl_math::pi;
+  r[2] = atan2(m(0,1), m(0,0)) * 180. / vnl_math::pi;
+   
+  // Get the scales
+  for(size_t i = 0; i < 3; i++)
+    s[i] = 100. * R(i,i);
+
+  // Get the shears
+  vnl_matrix_fixed<double, 3, 3> Sinv; Sinv.set_identity();
+  for(size_t i = 0; i < 3; i++)
+    Sinv(i,i) = 1.0 / R(i,i);
+  vnl_matrix_fixed<double, 3, 3> K = R * Sinv;
+
+  k[0] = atan(K(0,1)) * 180. / vnl_math::pi;
+  k[1] = atan(K(1,2)) * 180. / vnl_math::pi;
+  k[2] = atan(K(0,2)) * 180. / vnl_math::pi;
+  
+  printf("Affine parameters:  T=(%f, %f, %f); R = (%f, %f, %f); S = (%f, %f, %f); K = (%f, %f, %f)\n",
+          mat(0,3), mat(1,3), mat(2,3), r[0], r[1], r[2], s[0], s[1], s[2], k[0], k[1], k[2]);
+   
 
 
   double trace = m(0,0) + m(1,1) + m(2,2) + 1.0;
@@ -247,12 +277,12 @@ void quart_print(vnl_matrix_fixed<double, 3, 3> &A )
   printf("Quaternion:\n");
   printf("%12.5f   %12.5f   %12.5f  %12.5f\n", m_X, m_Y, m_Z, m_W);
 
-  double K = vcl_sqrt( m_X*m_X + m_Y*m_Y + m_Z*m_Z );
-  double angle = (180.0/vnl_math::pi) * 2.0 * asin( K );
+  double L = vcl_sqrt( m_X*m_X + m_Y*m_Y + m_Z*m_Z );
+  double angle = (180.0/vnl_math::pi) * 2.0 * asin( L );
   double axis[3];
-  axis[0] = m_X/K;
-  axis[1] = m_Y/K;
-  axis[2] = m_Z/K;
+  axis[0] = m_X/L;
+  axis[1] = m_Y/L;
+  axis[2] = m_Z/L;
   
   printf("Rotation angle:\n");
   printf("%f degrees\n", angle); 
@@ -513,11 +543,9 @@ void ras_print(MatrixStack &vmat, bool isfullinfo)
     printf("%12.5f   %12.5f   %12.5f   %12.5f\n", m(i,0), m(i,1), m(i,2), m(i,3));
 
   if ( isfullinfo )
-    {// Extract the 3x3 affine matrix
-    typedef vnl_matrix_fixed<double, 3, 3> Mat33;
-    Mat33 A = m.extract(3,3);
+    {
 
-    quart_print(A);
+    quart_print(m);
     }
 
 }
