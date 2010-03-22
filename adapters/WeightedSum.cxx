@@ -12,14 +12,11 @@ WeightedSum<TPixel, VDim>
   if(nw == 0)
     throw ConvertException("No weights specified for -weighted-sum command");
 
-  // Check dimensions
   ImagePointer iref = c->m_ImageStack.back();
-  for(size_t i = 1; i < nw; i++)
-    {
-    ImagePointer itest = c->m_ImageStack[c->m_ImageStack.size() - (i+1)];
-    if(itest->GetBufferedRegion() != iref->GetBufferedRegion())
-      throw ConvertException("Images passed to -weighted-sum command must have same size");
-    }
+
+  // Check dimensions
+  if(!c->CheckStackSameDimensions(nw))
+    throw ConvertException("Images on the stack don't have same dimensions");
 
   *c->verbose << "Taking weighted sum of images #" 
     << c->m_ImageStack.size() - nw << " to #" << c->m_ImageStack.size() << endl;

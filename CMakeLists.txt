@@ -64,6 +64,7 @@ SET(SOURCES
   adapters/Rank.cxx
   adapters/ReadImage.cxx
   adapters/ReciprocalImage.cxx
+  adapters/ReorderStack.cxx
   adapters/ReplaceIntensities.cxx
   adapters/ResampleImage.cxx
   adapters/ResliceImage.cxx
@@ -83,6 +84,7 @@ SET(SOURCES
   adapters/WarpImage.cxx
   adapters/WarpLabelImage.cxx
   adapters/WeightedSum.cxx
+  adapters/WeightedSumVoxelwise.cxx
   adapters/WriteImage.cxx
   ${CONVERT3D_BINARY_DIR}/ConvertImageVersion.cxx)
 

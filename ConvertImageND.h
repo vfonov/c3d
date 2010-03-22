@@ -55,6 +55,10 @@ public:
   // Get bounding box of an image
   void GetBoundingBox(ImageType *image, RealVector &bb0, RealVector &bb1);
 
+  // Check if N images on the stack have the same dimensions as the top image
+  // (pass zero to check all images on the stack)
+  bool CheckStackSameDimensions(size_t n);
+
   // Print a matrix in a nice way
   void PrintMatrix(
     std::ostream &sout, vnl_matrix<double> mat, 

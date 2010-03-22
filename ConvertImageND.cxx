@@ -33,6 +33,7 @@
 #include "Rank.h"
 #include "ReadImage.h"
 #include "ReciprocalImage.h"
+#include "ReorderStack.h"
 #include "ReplaceIntensities.h"
 #include "ResampleImage.h"
 #include "ResliceImage.h"
@@ -53,6 +54,7 @@
 #include "WarpLabelImage.h"
 #include "WriteImage.h"
 #include "WeightedSum.h"
+#include "WeightedSumVoxelwise.h"
 
 #include <cstring>
 #include <algorithm>
@@ -175,6 +177,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -rank" << endl;
   cout << "    -reciprocal" << endl;
   cout << "    -region" << endl;
+  cout << "    -reorder" << endl;
   cout << "    -replace" << endl;
   cout << "    -resample" << endl;
   cout << "    -resample-mm" << endl;
@@ -208,6 +211,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -voxelwise-regression, -voxreg" << endl;
   cout << "    -warp" << endl;
   cout << "    -weighted-sum, -wsum" << endl;
+  cout << "    -weighted-sum-voxelwise, -wsv" << endl;
 }
 
 template<class TPixel, unsigned int VDim>
@@ -966,6 +970,25 @@ ImageConverter<TPixel, VDim>
     return 0;
     }
 
+  else if(cmd == "-reorder")
+    {
+    // Get the parameter, treat it as a float
+    size_t k = 0;
+    double k_frac = atof(argv[1]);
+    if(k_frac > 0 && k_frac < 1)
+      k = (size_t) round(k_frac * m_ImageStack.size());
+    else if(k_frac >= 1)
+      k = (size_t) atoi(argv[1]);
+    else
+      throw ConvertException("Parameter %s to the '-reorder' command is invalid", argv[1]);
+    
+    ReorderStack<TPixel, VDim> adapter(this);
+    adapter(k);
+    
+    return 1;
+
+    }
+
   else if (cmd == "-set-sform")
     {
     string fn_tran( argv[1] );
@@ -1289,6 +1312,13 @@ ImageConverter<TPixel, VDim>
     WeightedSum<TPixel,VDim> adapter(this);
     adapter(weights);
     return weights.size();
+    }
+
+  else if(cmd == "-weighted-sum-voxelwise" || cmd == "-wsv")
+    {
+    WeightedSumVoxelwise<TPixel,VDim> adapter(this);
+    adapter();
+    return 0;
     }
 
   // Unknown command
@@ -1764,6 +1794,29 @@ ImageConverter<TPixel, VDim>
 
   // Return the number of arguments to the next command
   return narg - 1;
+}
+
+template<class TPixel, unsigned int VDim>
+bool
+ImageConverter<TPixel, VDim>
+::CheckStackSameDimensions(size_t n)
+{
+  if(n == 0)
+    n = m_ImageStack.size();
+
+  if(m_ImageStack.size() < n || n == 0)
+    throw ConvertException("Too few images on the stack for consistency check");
+
+  size_t top = n - 1;
+  for(size_t i = 0; i < n; i++)
+    {
+    if(m_ImageStack[top - i]->GetBufferedRegion() != m_ImageStack[top]->GetBufferedRegion())
+      {
+      return false;
+      }
+    }
+
+  return true;
 }
 
 template class ImageConverter<double, 2>;
