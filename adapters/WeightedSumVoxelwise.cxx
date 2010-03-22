@@ -14,9 +14,10 @@ WeightedSumVoxelwise<TPixel, VDim>
     throw ConvertException("Images on the stack don't have same dimensions");
 
   // Make a copy of the last image on the stack
-  c->CopyImage();
-  ImagePointer isum = c->m_ImageStack.back();
-  c->m_ImageStack.pop_back();
+  ImagePointer isum = ImageType::New();
+  isum->SetRegions(c->m_ImageStack.back()->GetBufferedRegion());
+  isum->CopyInformation(c->m_ImageStack.back());
+  isum->Allocate();
   isum->FillBuffer(0);
 
   *c->verbose << "Taking weighted sum of " << c->m_ImageStack.size() / 2 << " images.";
