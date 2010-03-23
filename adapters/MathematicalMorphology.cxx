@@ -19,23 +19,35 @@ MathematicalMorphology<TPixel, VDim>
   typedef itk::BinaryBallStructuringElement<TPixel, VDim> Element;
   Element elt;
   elt.SetRadius(radius);
+  elt.CreateStructuringElement();
 
   // Chose the right filter
   typedef itk::BinaryMorphologyImageFilter<ImageType, ImageType, Element> FilterType;
-  typename FilterType::Pointer filter;
+  ImagePointer output;
   if(erode)
-    filter = itk::BinaryErodeImageFilter<ImageType, ImageType, Element>::New();
+    {
+    typedef itk::BinaryErodeImageFilter<ImageType, ImageType, Element> FilterType;
+    typename FilterType::Pointer filter = FilterType::New();
+    filter->SetInput(img);
+    filter->SetErodeValue(value);
+    filter->SetKernel(elt);
+    filter->Update();
+    output = filter->GetOutput();
+    }
   else
-    filter = itk::BinaryDilateImageFilter<ImageType, ImageType, Element>::New();
-
-  filter->SetInput(img);
-  filter->SetForegroundValue(value);
-  filter->SetKernel(elt);
-  filter->Update();
+    {
+    typedef itk::BinaryDilateImageFilter<ImageType, ImageType, Element> FilterType;
+    typename FilterType::Pointer filter = FilterType::New();
+    filter->SetInput(img);
+    filter->SetDilateValue(value);
+    filter->SetKernel(elt);
+    filter->Update();
+    output = filter->GetOutput();
+    }
   
   // Put result on stack
   c->m_ImageStack.pop_back();
-  c->m_ImageStack.push_back(filter->GetOutput());
+  c->m_ImageStack.push_back(output);
 }
 
 // Invocations
