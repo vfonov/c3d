@@ -948,6 +948,14 @@ ImageConverter<TPixel, VDim>
     return 0;
     }
 
+  else if(cmd == "-reciprocal")
+    {
+    // Multiply by the reciprocal (for time being at least)
+    ReciprocalImage<TPixel, VDim>(this)();
+
+    return 0;
+    }
+
   else if (cmd == "-region")
     {
     // Get the position and index for the region
@@ -961,14 +969,6 @@ ImageConverter<TPixel, VDim>
     return 2;
     }
 
-
-  else if(cmd == "-reciprocal")
-    {
-    // Multiply by the reciprocal (for time being at least)
-    ReciprocalImage<TPixel, VDim>(this)();
-
-    return 0;
-    }
 
   else if(cmd == "-reorder")
     {
@@ -1098,6 +1098,31 @@ ImageConverter<TPixel, VDim>
     ScaleShiftImage<TPixel, VDim> adapter(this);
     adapter(factor, 0.0);
     return 1;
+    }
+
+
+  else if (cmd == "-set-sform")
+    {
+    string fn_tran( argv[1] );
+
+    *verbose << "Setting sform of image #" << m_ImageStack.size() << endl;
+    SetSform<TPixel, VDim> adapter(this);
+    adapter( fn_tran );
+
+    return 1;
+    }
+
+  else if (cmd == "-slice")
+    {
+    string axis( argv[1] );
+    int pos = atoi(argv[2]);
+    char * filename = argv[3];
+
+    *verbose << "Extracting slice in #" << m_ImageStack.size() << endl;
+    ExtractSlice<TPixel, VDim> adapter(this);
+    adapter(axis, pos, filename);
+
+    return 3;
     }
 
   else if(cmd == "-shift")
