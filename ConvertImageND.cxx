@@ -1003,7 +1003,7 @@ ImageConverter<TPixel, VDim>
   else if (cmd == "-slice")
     {
     string axis( argv[1] );
-    int pos = atoi(argv[2]);
+    char * pos = argv[2];
     char * filename = argv[3];
 
     *verbose << "Extracting slice in #" << m_ImageStack.size() << endl;
@@ -1115,7 +1115,7 @@ ImageConverter<TPixel, VDim>
   else if (cmd == "-slice")
     {
     string axis( argv[1] );
-    int pos = atoi(argv[2]);
+    char * pos = argv[2];
     char * filename = argv[3];
 
     *verbose << "Extracting slice in #" << m_ImageStack.size() << endl;

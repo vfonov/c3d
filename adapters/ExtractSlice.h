@@ -13,7 +13,7 @@ public:
 
   ExtractSlice(Converter *c) : c(c) {}
 
-  void operator() (string axis, int posi, const char* filename);
+  void operator() (string axis, char* pos, char* filename);
 
 private:
   Converter *c;

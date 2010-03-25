@@ -8,7 +8,7 @@
 template <class TPixel, unsigned int VDim>
 void
 ExtractSlice<TPixel, VDim>
-::operator() (string axis, int pos, const char* filename)
+::operator() (string axis, char* pos, char* filename)
 {
   // Check input availability
   if(c->m_ImageStack.size() < 1)
@@ -20,6 +20,8 @@ ExtractSlice<TPixel, VDim>
   // Get the image
   ImagePointer image = c->m_ImageStack.back();
   typename ImageType::SpacingType spacing = image->GetSpacing();
+  typename ImageType::RegionType inputRegion = image->GetLargestPossibleRegion();
+  typename ImageType::SizeType size = inputRegion.GetSize();
   typedef itk::Image<TPixel, 2> SliceType;
 
   typename SliceType::SpacingType slicespacing;
@@ -49,6 +51,18 @@ ExtractSlice<TPixel, VDim>
     throw 0;
     }
 
+  double percent_pos;
+  int slicepos;
+  std::string s( pos );
+  size_t ipos = s.rfind("%");
+  if(ipos == s.size() - 1)
+    {
+    const char *tok = strtok(pos, "%");
+    percent_pos = atof( tok );
+    slicepos = (int)round( ( percent_pos / 100.0 ) * (size[slicedir] -1)); 
+    }
+  else
+    slicepos = atoi( pos );
 
   // Say what we are doing
   *c->verbose << "Extracting slice " << pos << " along " << axis << " axis " << endl;
@@ -56,13 +70,10 @@ ExtractSlice<TPixel, VDim>
 
   typedef itk::ExtractImageFilter< ImageType, SliceType > ExtractFilterType;
   typename ExtractFilterType::Pointer extractfilter = ExtractFilterType::New();
-  typename ImageType::RegionType inputRegion = image->GetLargestPossibleRegion();
   typename ImageType::PointType origin = image->GetOrigin();
-  typename ImageType::SizeType fixedSize = image->GetLargestPossibleRegion().GetSize();
-  typename ImageType::SizeType size = inputRegion.GetSize();
   size[slicedir] = 0;
   typename ImageType::IndexType start = inputRegion.GetIndex();
-  start[slicedir] = pos;
+  start[slicedir] = slicepos;
   typename ImageType::RegionType desiredRegion;
   desiredRegion.SetSize(  size  );
   desiredRegion.SetIndex( start );
