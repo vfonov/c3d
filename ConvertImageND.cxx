@@ -15,6 +15,7 @@
 #include "CreateInterpolator.h"
 #include "ExtractRegion.h"
 #include "ExtractSlice.h"
+#include "FlipImage.h"
 #include "GeneralLinearModel.h"
 #include "HistogramMatch.h"
 #include "ImageERF.h"
@@ -27,6 +28,7 @@
 //#include "MRFVote.h"
 #include "MultiplyImages.h"
 #include "NormalizedCrossCorrelation.h"
+#include "OverlayLabelImage.h"
 #include "PadImage.h"
 #include "PeronaMalik.h"
 #include "PrintImageInfo.h"
@@ -58,6 +60,8 @@
 
 #include <cstring>
 #include <algorithm>
+#include <iostream>
+#include <fstream>
 
 // Support for regular expressions via KWSYS in ITK
 #include <itksys/RegularExpression.hxx>
@@ -135,6 +139,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -erf" << endl;
   cout << "    -exp" << endl;
   cout << "    -fft" << endl;
+  cout << "    -flip" << endl;
   cout << "    -foreach" << endl;
   cout << "    -glm" << endl;
   cout << "    -histmatch, -histogram-match" << endl;
@@ -167,6 +172,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -oo, -output-multiple" << endl;
   cout << "    -origin" << endl;
   cout << "    -overlap" << endl;
+  cout << "    -overlay-label-image, -oli" << endl;
   cout << "    -pad" << endl;
   cout << "    -percent-intensity-mode, -pim" << endl;
   cout << "    -pixel" << endl;
@@ -392,6 +398,14 @@ ImageConverter<TPixel, VDim>
     ComputeFFT<TPixel, VDim> adapter(this);
     adapter();
     return 0;
+    }
+
+  else if(cmd == "-flip")
+    {
+    string flipax = argv[1];
+    FlipImage<TPixel, VDim> adapter(this);
+    adapter(flipax);
+    return 1;
     }
 
   else if(cmd == "-foreach")
@@ -852,6 +866,14 @@ ImageConverter<TPixel, VDim>
     ComputeOverlaps<TPixel, VDim> adapter(this);
     adapter(label);
     return 1;
+    }
+
+  else if(cmd == "-overlay-label-image" || cmd == "-oli")
+    {
+    double opacity = atof(argv[2]);
+    OverlayLabelImage<TPixel, VDim> adapter(this);
+    adapter(argv[1], opacity);
+    return 2;
     }
 
   else if(cmd == "-pad")
@@ -1804,6 +1826,61 @@ ImageConverter<TPixel, VDim>
 
   // Return the number of arguments to the next command
   return narg - 1;
+}
+
+template<class TPixel, unsigned int VDim>
+typename ImageConverter<TPixel, VDim>::LabelToRGBAMap 
+ImageConverter<TPixel, VDim>
+::ReadLabelToRGBAMap(const char *fname)
+{
+  // Create a stream for reading the file
+  ifstream fin(fname);
+  string line;
+
+  // Create a temporary array of color labels
+  LabelToRGBAMap lmap;
+
+  // Check that the file is readable
+  if(!fin.good())
+    throw ConvertException("Label file %s can not be read", fname);
+
+  // Read each line of the file separately
+  for(size_t iLine=0; !fin.eof(); iLine++)
+    {
+    // Read the line into a string
+    std::getline(fin,line);
+
+    // Check if the line is a comment or a blank line
+    if(line[0] == '#' || line.length() == 0)
+      continue;
+
+    // Create a stream to parse that string
+    istringstream iss(line);
+    iss.exceptions(std::ios::badbit | std::ios::failbit);
+
+    try 
+      {
+      // Read in the elements of the file
+      vnl_vector_fixed<double, 4> rgba;
+      double idx;
+      iss >> idx;
+      iss >> rgba[0];
+      iss >> rgba[1];
+      iss >> rgba[2];
+      iss >> rgba[3];
+
+      // Add the color label to the list
+      lmap[idx] = rgba;
+      }
+    catch( std::exception )
+      {
+      // create an exeption string
+      throw ConvertException("Error reading file %s on line %d", fname, iLine+1);
+      }
+    }  
+
+  // Return the map
+  return lmap;
 }
 
 template<class TPixel, unsigned int VDim>

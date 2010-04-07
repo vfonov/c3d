@@ -9,7 +9,7 @@
 template <class TPixel, unsigned int VDim>
 void
 ExtractSlice<TPixel, VDim>
-::operator() (string axis, char* pos)
+::operator() (string axis, char* position)
 {
   // Check input availability
   if(c->m_ImageStack.size() < 1)
@@ -31,6 +31,8 @@ ExtractSlice<TPixel, VDim>
     throw ConvertException("first parameter to -slice must be x,y or z");
 
   // Process the percent parameter
+  char *pos = new char[strlen(position)];
+  strcpy(pos, position);
   double percent_pos;
   int slicepos;
   std::string s( pos );
@@ -105,6 +107,7 @@ ExtractSlice<TPixel, VDim>
   c->m_ImageStack.pop_back();
   c->m_ImageStack.push_back(imnew);
 
+  delete pos;
 }
 
 // Invocations

@@ -46,6 +46,7 @@ SET(SOURCES
   adapters/CreateInterpolator.cxx
   adapters/ExtractRegion.cxx
   adapters/ExtractSlice.cxx
+  adapters/FlipImage.cxx
   adapters/HistogramMatch.cxx
   adapters/ImageERF.cxx
   adapters/ImageLaplacian.cxx
@@ -58,6 +59,7 @@ SET(SOURCES
 #  adapters/MRFVote.cxx
   adapters/MultiplyImages.cxx
   adapters/NormalizedCrossCorrelation.cxx
+  adapters/OverlayLabelImage.cxx
   adapters/PadImage.cxx
   adapters/PeronaMalik.cxx
   adapters/PrintImageInfo.cxx

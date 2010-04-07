@@ -32,6 +32,7 @@ public:
   typedef typename ImageType::RegionType RegionType;
   typedef vnl_vector_fixed<double, VDim> RealVector;
   typedef vnl_vector_fixed<int, VDim> IntegerVector;
+  typedef std::map<TPixel, vnl_vector_fixed<double, 4> > LabelToRGBAMap;
 
   // Complex stuff
   typedef std::complex<TPixel> ComplexPixel;
@@ -58,6 +59,9 @@ public:
   // Check if N images on the stack have the same dimensions as the top image
   // (pass zero to check all images on the stack)
   bool CheckStackSameDimensions(size_t n);
+
+  // Read label to RGBA mapping from file (SNAP format)
+  static LabelToRGBAMap ReadLabelToRGBAMap(const char *fname);
 
   // Print a matrix in a nice way
   void PrintMatrix(
