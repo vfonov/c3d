@@ -1000,19 +1000,6 @@ ImageConverter<TPixel, VDim>
     return 1;
     }
 
-  else if (cmd == "-slice")
-    {
-    string axis( argv[1] );
-    char * pos = argv[2];
-    char * filename = argv[3];
-
-    *verbose << "Extracting slice in #" << m_ImageStack.size() << endl;
-    ExtractSlice<TPixel, VDim> adapter(this);
-    adapter(axis, pos, filename);
-
-    return 3;
-    }
-
   else if (cmd == "-replace")
     {
     vector<double> vReplace;
@@ -1116,13 +1103,11 @@ ImageConverter<TPixel, VDim>
     {
     string axis( argv[1] );
     char * pos = argv[2];
-    char * filename = argv[3];
 
-    *verbose << "Extracting slice in #" << m_ImageStack.size() << endl;
     ExtractSlice<TPixel, VDim> adapter(this);
-    adapter(axis, pos, filename);
+    adapter(axis, pos);
 
-    return 3;
+    return 2;
     }
 
   else if(cmd == "-shift")

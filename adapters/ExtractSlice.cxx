@@ -1,4 +1,5 @@
 #include "ExtractSlice.h"
+#include "ExtractRegion.h"
 #include <string>
 #include <iostream>
 #include "itkExtractImageFilter.h"
@@ -8,49 +9,28 @@
 template <class TPixel, unsigned int VDim>
 void
 ExtractSlice<TPixel, VDim>
-::operator() (string axis, char* pos, char* filename)
+::operator() (string axis, char* pos)
 {
   // Check input availability
   if(c->m_ImageStack.size() < 1)
-    {
-    cerr << "No images on the stack" << endl;
-    throw 0;
-    }
+    throw ConvertException("No images on stack");
 
   // Get the image
   ImagePointer image = c->m_ImageStack.back();
-  typename ImageType::SpacingType spacing = image->GetSpacing();
-  typename ImageType::RegionType inputRegion = image->GetLargestPossibleRegion();
-  typename ImageType::SizeType size = inputRegion.GetSize();
-  typedef itk::Image<TPixel, 2> SliceType;
+  SizeType size = image->GetBufferedRegion().GetSize();
 
-  typename SliceType::SpacingType slicespacing;
-  for (int ii=0; ii<2; ii++) slicespacing[ii]=spacing[ii];
+  // Process the first parameter
   unsigned int slicedir;
   if (!axis.compare("x"))
-    {
     slicedir = 0;
-    slicespacing[0] = spacing[1];
-    slicespacing[1] = spacing[2];
-    }
   else if (!axis.compare("y"))
-    {
     slicedir = 1;
-    slicespacing[0] = spacing[0];
-    slicespacing[1] = spacing[2];
-    }
   else if (!axis.compare("z"))
-    {
     slicedir = 2;
-    slicespacing[0] = spacing[0];
-    slicespacing[1] = spacing[1];
-    }
   else
-    {
-    cerr << "axis must be x,y or z" << endl;
-    throw 0;
-    }
+    throw ConvertException("first parameter to -slice must be x,y or z");
 
+  // Process the percent parameter
   double percent_pos;
   int slicepos;
   std::string s( pos );
@@ -65,29 +45,65 @@ ExtractSlice<TPixel, VDim>
     slicepos = atoi( pos );
 
   // Say what we are doing
-  *c->verbose << "Extracting slice " << pos << " along " << axis << " axis " << endl;
+  *c->verbose << "Extracting slice " << pos << " along " << axis 
+    << " axis in image #" << c->m_ImageStack.size()-1 << endl;
 
+  // Use the extractor to extract the actual region
+  RegionType rslice = image->GetBufferedRegion();
+  rslice.SetSize(slicedir, 1);
+  rslice.SetIndex(slicedir, slicepos);
 
-  typedef itk::ExtractImageFilter< ImageType, SliceType > ExtractFilterType;
-  typename ExtractFilterType::Pointer extractfilter = ExtractFilterType::New();
-  typename ImageType::PointType origin = image->GetOrigin();
-  size[slicedir] = 0;
-  typename ImageType::IndexType start = inputRegion.GetIndex();
-  start[slicedir] = slicepos;
-  typename ImageType::RegionType desiredRegion;
-  desiredRegion.SetSize(  size  );
-  desiredRegion.SetIndex( start );
-  extractfilter->SetExtractionRegion( desiredRegion );
-  extractfilter->SetInput( image );
-  extractfilter->Update();
-  typename SliceType::Pointer slice = extractfilter->GetOutput();
-  slice->SetSpacing(slicespacing);
+  ExtractRegion<TPixel, VDim> extractor(c);
+  extractor(rslice);
 
-  typedef itk::ImageFileWriter<SliceType> WriterType;
-  typename WriterType::Pointer writer = WriterType::New();
-  writer->SetInput( slice );
-  writer->SetFileName( filename );
-  writer->Update();
+  // If slicing in the last dimension, we are done
+  if(slicedir == VDim - 1)
+    return;
+
+  // Now, transpose the image to make the last dimension 1 
+  // (this is like MATLAB's reshape command)
+  std::vector<size_t> reorder;
+  for(size_t i = 0; i < VDim; i++)
+    if(i != slicedir)
+      reorder.push_back(i);
+  reorder.push_back(slicedir);  // 0 -> 1,2,0  1 -> 0,2,1 ...
+
+  // Create a new image for the slice
+  ImagePointer imnew = ImageType::New();
+  ImagePointer imext = c->m_ImageStack.back();
+  imnew->CopyInformation(image);
+
+  // Create new region, origin, spacing for the image
+  RegionType reg;
+  typename ImageType::PointType org;
+  typename ImageType::SpacingType spc;
+  typename ImageType::DirectionType dir;
+
+  for(size_t i = 0; i < VDim; i++)
+    {
+    int j = reorder[i];
+    reg.SetSize(i, imext->GetBufferedRegion().GetSize(j));
+    reg.SetIndex(i, imext->GetBufferedRegion().GetIndex(j));
+    org[i] = imext->GetOrigin()[i]; // not a bug!
+    spc[i] = imext->GetSpacing()[j];
+    for(size_t k = 0; k < VDim; k++)
+      dir(k, i) = imext->GetDirection()(k, j);
+    }
+
+  imnew->SetRegions(reg);
+  imnew->SetOrigin(org);
+  imnew->SetSpacing(spc);
+  imnew->SetDirection(dir);
+
+  // Copy all the data
+  imnew->Allocate();
+  Iterator itrg(imnew, reg);
+  ConstIterator isrc(imext, imext->GetBufferedRegion());
+  for(; !isrc.IsAtEnd(); ++isrc, ++itrg)
+    itrg.Set(isrc.Get());
+
+  c->m_ImageStack.pop_back();
+  c->m_ImageStack.push_back(imnew);
 
 }
 
