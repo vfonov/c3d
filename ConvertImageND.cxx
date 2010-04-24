@@ -4,6 +4,7 @@
 #include "AntiAliasImage.h"
 #include "ApplyMetric.h"
 #include "BiasFieldCorrection.h"
+#include "BiasFieldCorrectionN4.h"
 #include "BinaryImageCentroid.h"
 #include "ClipImageIntensity.h"
 #include "ComputeFFT.h"
@@ -162,6 +163,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -mi, -mutual-info" << endl;
   cout << "    -mixture, -mixture-model" << endl;
   cout << "    -multiply, -times" << endl;
+  cout << "    -n4, -n4-bias-correction" << endl;
   cout << "    -ncc, -normalized-cross-correlation" << endl;
   cout << "    -nmi, -normalized-mutual-info" << endl;
   cout << "    -normpdf" << endl;
@@ -278,6 +280,13 @@ ImageConverter<TPixel, VDim>
   else if(cmd == "-biascorr")
     {
     BiasFieldCorrection<TPixel, VDim> adapter(this);
+    adapter();
+    return 0;
+    }
+
+  else if(cmd == "-n4" || cmd == "-n4-bias-correction" )
+    {
+    BiasFieldCorrectionN4<TPixel, VDim> adapter(this);
     adapter();
     return 0;
     }
@@ -1003,10 +1012,10 @@ ImageConverter<TPixel, VDim>
       k = (size_t) atoi(argv[1]);
     else
       throw ConvertException("Parameter %s to the '-reorder' command is invalid", argv[1]);
-    
+
     ReorderStack<TPixel, VDim> adapter(this);
     adapter(k);
-    
+
     return 1;
 
     }
@@ -1829,7 +1838,7 @@ ImageConverter<TPixel, VDim>
 }
 
 template<class TPixel, unsigned int VDim>
-typename ImageConverter<TPixel, VDim>::LabelToRGBAMap 
+typename ImageConverter<TPixel, VDim>::LabelToRGBAMap
 ImageConverter<TPixel, VDim>
 ::ReadLabelToRGBAMap(const char *fname)
 {
@@ -1858,7 +1867,7 @@ ImageConverter<TPixel, VDim>
     istringstream iss(line);
     iss.exceptions(std::ios::badbit | std::ios::failbit);
 
-    try 
+    try
       {
       // Read in the elements of the file
       vnl_vector_fixed<double, 4> rgba;
@@ -1877,7 +1886,7 @@ ImageConverter<TPixel, VDim>
       // create an exeption string
       throw ConvertException("Error reading file %s on line %d", fname, iLine+1);
       }
-    }  
+    }
 
   // Return the map
   return lmap;
