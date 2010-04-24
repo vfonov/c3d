@@ -44,53 +44,44 @@ LabelOverlapMeasures<TPixel, VDim>
 
   // Create the label statistics fltOverlap
   typedef itk::LabelOverlapMeasuresImageFilter<LabelImageType> OverlapFilter;
-  typename OverlapFilter::Pointer fltOverlap = OverlapFilter::New();
+  typename OverlapFilter::Pointer filter = OverlapFilter::New();
 
   // Set the inputs
-  fltOverlap->SetSourceImage( slabSource );
-  fltOverlap->SetTargetImage( slabTarget );
+  filter->SetSourceImage( slabSource );
+  filter->SetTargetImage( slabTarget );
 
   // Update the fltOverlap
-  fltOverlap->Update();
+  filter->Update();
 
-  // Print the result
-
-  std::cout << "                                  "
-            << "************  All Labels *************" << std::endl;
-  std::cout << std::setw( 17 ) << "   " << std::setw( 17 ) << "Total"
+  std::cout << "                                          "
+            << "************ All Labels *************" << std::endl;
+  std::cout << std::setw( 10 ) << "   "
+    << std::setw( 17 ) << "Total"
     << std::setw( 17 ) << "Union (jaccard)"
-    << std::setw( 17 ) << "Mean (dice)" << std::setw( 17 ) << "False negative"
+    << std::setw( 17 ) << "Mean (dice)"
+    << std::setw( 17 ) << "Volume sim."
+    << std::setw( 17 ) << "False negative"
     << std::setw( 17 ) << "False positive" << std::endl;
-  std::cout << std::setw( 17 ) << "Volumetric";
-  std::cout << std::setw( 17 ) << fltOverlap->GetVolumeTotalOverlap();
-  std::cout << std::setw( 17 ) << fltOverlap->GetVolumeUnionOverlap();
-  std::cout << std::setw( 17 ) << fltOverlap->GetVolumeMeanOverlap();
-  std::cout << std::setw( 17 ) << fltOverlap->GetVolumeFalseNegativeError();
-  std::cout << std::setw( 17 ) << fltOverlap->GetVolumeFalsePositiveError();
-  std::cout << std::endl;
-  std::cout << std::setw( 17 ) << "Surface";
-  std::cout << std::setw( 17 ) << fltOverlap->GetSurfaceTotalOverlap();
-  std::cout << std::setw( 17 ) << fltOverlap->GetSurfaceUnionOverlap();
-  std::cout << std::setw( 17 ) << fltOverlap->GetSurfaceMeanOverlap();
-  std::cout << std::setw( 17 ) << fltOverlap->GetSurfaceFalseNegativeError();
-  std::cout << std::setw( 17 ) << fltOverlap->GetSurfaceFalsePositiveError();
-  std::cout << std::endl;
-  std::cout << "Other related measures." << std::endl;
-  std::cout << "  Volume similarity: "
-    << fltOverlap->GetVolumeSimilarity() << std::endl;
+  std::cout << std::setw( 10 ) << "   ";
+  std::cout << std::setw( 17 ) << filter->GetTotalOverlap();
+  std::cout << std::setw( 17 ) << filter->GetUnionOverlap();
+  std::cout << std::setw( 17 ) << filter->GetMeanOverlap();
+  std::cout << std::setw( 17 ) << filter->GetVolumeSimilarity();
+  std::cout << std::setw( 17 ) << filter->GetFalseNegativeError();
+  std::cout << std::setw( 17 ) << filter->GetFalsePositiveError();
   std::cout << std::endl;
 
-  std::cout << "                               "
+  std::cout << "                                       "
             << "************ Individual Labels *************" << std::endl;
-  std::cout << "Volumetric overlap measures." << std::endl;
-  std::cout << std::setw( 17 ) << "Label"
-            << std::setw( 17 ) << "Total"
+  std::cout << std::setw( 10 ) << "Label"
+            << std::setw( 17 ) << "Target"
             << std::setw( 17 ) << "Union (jaccard)"
             << std::setw( 17 ) << "Mean (dice)"
+            << std::setw( 17 ) << "Volume sim."
             << std::setw( 17 ) << "False negative"
             << std::setw( 17 ) << "False positive" << std::endl;
 
-  typename OverlapFilter::MapType labelMap = fltOverlap->GetLabelSetMeasures();
+  typename OverlapFilter::MapType labelMap = filter->GetLabelSetMeasures();
   typename OverlapFilter::MapType::const_iterator it;
   for( it = labelMap.begin(); it != labelMap.end(); ++it )
     {
@@ -99,64 +90,18 @@ LabelOverlapMeasures<TPixel, VDim>
       continue;
       }
 
-    short label = (*it).first;
+    int label = (*it).first;
 
-    std::cout << std::setw( 17 ) << label;
-    std::cout << std::setw( 17 ) << fltOverlap->GetVolumeTotalOverlap( label );
-    std::cout << std::setw( 17 ) << fltOverlap->GetVolumeUnionOverlap( label );
-    std::cout << std::setw( 17 ) << fltOverlap->GetVolumeMeanOverlap( label );
-    std::cout << std::setw( 17 ) << fltOverlap->GetVolumeFalseNegativeError( label );
-    std::cout << std::setw( 17 ) << fltOverlap->GetVolumeFalsePositiveError( label );
+    std::cout << std::setw( 10 ) << label;
+    std::cout << std::setw( 17 ) << filter->GetTargetOverlap( label );
+    std::cout << std::setw( 17 ) << filter->GetUnionOverlap( label );
+    std::cout << std::setw( 17 ) << filter->GetMeanOverlap( label );
+    std::cout << std::setw( 17 ) << filter->GetVolumeSimilarity( label );
+    std::cout << std::setw( 17 ) << filter->GetFalseNegativeError( label );
+    std::cout << std::setw( 17 ) << filter->GetFalsePositiveError( label );
     std::cout << std::endl;
     }
 
-  std::cout << "Surface overlap measures." << std::endl;
-  std::cout << std::setw( 17 ) << "Label"
-            << std::setw( 17 ) << "Total"
-            << std::setw( 17 ) << "Union (jaccard)"
-            << std::setw( 17 ) << "Mean (dice)"
-            << std::setw( 17 ) << "False negative"
-            << std::setw( 17 ) << "False positive" << std::endl;
-  for( it = labelMap.begin(); it != labelMap.end(); ++it )
-    {
-    if( (*it).first == 0 )
-      {
-      continue;
-      }
-    short label = (*it).first;
-
-    std::cout << std::setw( 17 ) << label;
-    std::cout << std::setw( 17 ) << fltOverlap->GetSurfaceTotalOverlap( label );
-    std::cout << std::setw( 17 ) << fltOverlap->GetSurfaceUnionOverlap( label );
-    std::cout << std::setw( 17 ) << fltOverlap->GetSurfaceMeanOverlap( label );
-    std::cout << std::setw( 17 ) << fltOverlap->GetSurfaceFalseNegativeError( label );
-    std::cout << std::setw( 17 ) << fltOverlap->GetSurfaceFalsePositiveError( label );
-    std::cout << std::endl;
-    }
-
-  std::cout << "Other related measures." << std::endl;
-  std::cout << std::setw( 17 ) << "Label"
-            << std::setw( 17 ) << "Volume sim."
-            << std::setw( 17 ) << "Hausdorff"
-            << std::setw( 17 ) << "Dir. Hausdorff"
-            << std::setw( 17 ) << "Contour"
-            << std::setw( 17 ) << "Dir. Contour" << std::endl;
-  for( it = labelMap.begin(); it != labelMap.end(); ++it )
-    {
-    if( (*it).first == 0 )
-      {
-      continue;
-      }
-    short label = (*it).first;
-
-    std::cout << std::setw( 17 ) << label;
-    std::cout << std::setw( 17 ) << fltOverlap->GetVolumeSimilarity( label );
-    std::cout << std::setw( 17 ) << fltOverlap->GetHausdorffDistance( label );
-    std::cout << std::setw( 17 ) << fltOverlap->GetDirectedHausdorffDistance( label );
-    std::cout << std::setw( 17 ) << fltOverlap->GetContourMeanDistance( label );
-    std::cout << std::setw( 17 ) << fltOverlap->GetDirectedContourMeanDistance( label );
-    std::cout << std::endl;
-    }
 }
 
 // Invocations
