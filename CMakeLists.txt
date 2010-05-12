@@ -36,6 +36,7 @@ SET(SOURCES
   adapters/AntiAliasImage.cxx
   adapters/ApplyMetric.cxx
   adapters/BiasFieldCorrection.cxx
+  adapters/BiasFieldCorrectionN4.cxx
   adapters/BinaryImageCentroid.cxx
   adapters/ClipImageIntensity.cxx
   adapters/ComputeFFT.cxx
