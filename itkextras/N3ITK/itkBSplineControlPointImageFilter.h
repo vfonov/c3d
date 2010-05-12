@@ -3,8 +3,8 @@
   Program:   Insight Segmentation & Registration Toolkit
   Module:    $RCSfile: itkBSplineControlPointImageFilter.h,v $
   Language:  C++
-  Date:      $Date: 2009/11/06 19:51:44 $
-  Version:   $Revision: 1.2 $
+  Date:      $Date: 2010/05/12 14:23:54 $
+  Version:   $Revision: 1.3 $
 
   Copyright (c) Insight Software Consortium. All rights reserved.
   See ITKCopyright.txt or http://www.itk.org/HTML/Copyright.htm for details.
@@ -319,7 +319,8 @@ public:
    * Generate a refined control point lattice from the input control point
    * lattice such that the resolution is doubled for each level.
    */
-  typename ControlPointLatticeType::Pointer RefineControlLattice( ArrayType );
+  typename ControlPointLatticeType::Pointer
+    RefineControlPointLattice( ArrayType );
 
 protected:
   BSplineControlPointImageFilter();
