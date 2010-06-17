@@ -382,7 +382,7 @@ ImageConverter<TPixel, VDim>
   else if(cmd == "-erode")
     {
     MathematicalMorphology<TPixel,VDim> adapter(this);
-    adapter(false, atof(argv[1]), ReadSizeVector(argv[2]));
+    adapter(true, atof(argv[1]), ReadSizeVector(argv[2]));
     return 2;
     }
 
