@@ -41,7 +41,7 @@ ExtractSlice<TPixel, VDim>
     {
     const char *tok = strtok(pos, "%");
     percent_pos = atof( tok );
-    slicepos = (int)round( ( percent_pos / 100.0 ) * (size[slicedir] -1)); 
+    slicepos = (int)(0.5 + (percent_pos / 100.0) * (size[slicedir] -1)); 
     }
   else
     slicepos = atoi( pos );
