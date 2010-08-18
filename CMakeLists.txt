@@ -88,6 +88,7 @@ SET(SOURCES
   adapters/WarpLabelImage.cxx
   adapters/WeightedSum.cxx
   adapters/WeightedSumVoxelwise.cxx
+  adapters/WrapDimension.cxx
   adapters/WriteImage.cxx
   ${CONVERT3D_BINARY_DIR}/ConvertImageVersion.cxx)
 

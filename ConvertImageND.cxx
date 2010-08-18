@@ -58,6 +58,7 @@
 #include "WriteImage.h"
 #include "WeightedSum.h"
 #include "WeightedSumVoxelwise.h"
+#include "WrapDimension.h"
 
 #include <cstring>
 #include <algorithm>
@@ -218,6 +219,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -voxel-integral, -voxel-int" << endl;
   cout << "    -voxelwise-regression, -voxreg" << endl;
   cout << "    -warp" << endl;
+  cout << "    -wrap" << endl;
   cout << "    -weighted-sum, -wsum" << endl;
   cout << "    -weighted-sum-voxelwise, -wsv" << endl;
 }
@@ -1340,6 +1342,15 @@ ImageConverter<TPixel, VDim>
     RealVector stdev = ReadRealSize(argv[1]);
     WarpLabelImage<TPixel, VDim> adapter(this);
     adapter(stdev);
+    return 1;
+    }
+
+  // Wrap image around
+  else if(cmd == "-wrap")
+    {
+    IndexType iwrap = ReadIndexVector(argv[1]);
+    WrapDimension<TPixel, VDim> adapter(this);
+    adapter(iwrap);
     return 1;
     }
 
