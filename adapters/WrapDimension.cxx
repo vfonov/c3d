@@ -28,7 +28,6 @@ WrapDimension<TPixel, VDim>
   *c->verbose << "Wrapping image #" << c->m_ImageStack.size() << " by " << xWrap << endl;
   *c->verbose << "  Rotate in memory by " << k << " bytes." << endl;
   *c->verbose << "  GCD(" << n << "," << k << ") = " << gcd << endl;
-  *c->verbose << "  " << (10-60) % 123 << endl;
 
   // Get data pointer
   TPixel *ptr = img->GetBufferPointer();

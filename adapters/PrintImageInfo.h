@@ -17,6 +17,7 @@ public:
 private:
   Converter *c;
 
+  std::string GetRAICodeFromDirectionMatrix(vnl_matrix_fixed<double, VDim, VDim> dir);
 };
 
 #endif

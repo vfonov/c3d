@@ -42,6 +42,7 @@
 #include "ResliceImage.h"
 #include "SampleImage.h"
 #include "ScaleShiftImage.h"
+#include "SetOrientation.h"
 #include "SetSform.h"
 #include "SignedDistanceTransform.h"
 #include "SmoothImage.h"
@@ -173,6 +174,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -o" << endl;
   cout << "    -omc, -output-multicomponent" << endl;
   cout << "    -oo, -output-multiple" << endl;
+  cout << "    -orient" << endl;
   cout << "    -origin" << endl;
   cout << "    -overlap" << endl;
   cout << "    -overlay-label-image, -oli" << endl;
@@ -807,6 +809,13 @@ ImageConverter<TPixel, VDim>
     WriteImage<TPixel, VDim> adapter(this);
     adapter.WriteMultiComponent(argv[np], nc);
     return np;
+    }
+  
+  else if(cmd == "-orient")
+    {
+    SetOrientation<TPixel,VDim> adapter(this);
+    adapter(argv[1]);
+    return 1;
     }
 
   // Write mulptiple images

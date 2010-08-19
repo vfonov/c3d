@@ -73,6 +73,49 @@ get_rai_code(itk::SpatialOrientation::ValidCoordinateOrientationFlags code)
 
 
 template <class TPixel, unsigned int VDim>
+std::string
+PrintImageInfo<TPixel, VDim>
+::GetRAICodeFromDirectionMatrix(vnl_matrix_fixed<double, VDim, VDim> dir)
+{
+  // Compute the RAI code from the direction matrix
+  char rai[VDim+1]; rai[VDim] = 0;
+  bool oblique = false;
+
+  char codes[3][2] = { {'R', 'L'}, {'A', 'P'}, {'I', 'S'}};
+
+  for(size_t i = 0; i < VDim; i++)
+    {
+    // Get the direction cosine for voxel direction i
+    vnl_vector_fixed<double, VDim> dcos = dir.get_column(i);
+    double dabsmax = dcos.inf_norm();
+
+    for(size_t j = 0; j < VDim; j++)
+      {
+      double dabs = fabs(dcos[j]);
+      size_t dsgn = dcos[j] > 0 ? 0 : 1;
+
+      if(dabs == 1.0)
+        {
+        rai[i] = codes[j][dsgn];
+        }
+      else if(dabs == dabsmax)
+        {
+        oblique = true;
+        rai[i] = codes[j][dsgn];
+        }
+      }
+    }
+      
+  if(oblique)
+    {
+    std::ostringstream sout;
+    sout << "Oblique, closest to " << rai;
+    return sout.str();
+    }
+  else return string(rai);
+}
+
+template <class TPixel, unsigned int VDim>
 void
 PrintImageInfo<TPixel, VDim>
 ::operator() (bool full)
@@ -111,6 +154,7 @@ PrintImageInfo<TPixel, VDim>
     cout << " bb = {[" << bb0 << "], [" << bb1 << "]}; ";
     cout << " vox = " << image->GetSpacing() << "; ";
     cout << " range = [" << iMin << ", " << iMax << "]; ";
+    cout << " orient = " << GetRAICodeFromDirectionMatrix(image->GetDirection().GetVnlMatrix()) << endl;
     cout << endl;
     }
   else
@@ -121,8 +165,10 @@ PrintImageInfo<TPixel, VDim>
     cout << "  Voxel Spacing      : " << image->GetSpacing() << endl;
     cout << "  Intensity Range    : [" << iMin << ", " << iMax << "]" << endl;
     cout << "  Mean Intensity     : " << iMean << endl;
+    cout << "  Canon. Orientation : " << GetRAICodeFromDirectionMatrix(image->GetDirection().GetVnlMatrix()) << endl;
     cout << "  Direction Cos Mtx. : " << endl;
     c->PrintMatrix(cout, image->GetDirection().GetVnlMatrix());
+
     // Print NIFTI s-form matrix (check against freesurfer's MRIinfo)
     cout << "  Voxel->RAS x-form  : " << endl;
     c->PrintMatrix(cout, 

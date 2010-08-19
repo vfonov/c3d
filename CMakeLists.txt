@@ -74,6 +74,7 @@ SET(SOURCES
   adapters/SampleImage.cxx
   adapters/ScaleShiftImage.cxx
   adapters/SetSform.cxx
+  adapters/SetOrientation.cxx
   adapters/SignedDistanceTransform.cxx
   adapters/SmoothImage.cxx
   adapters/SplitMultilabelImage.cxx
