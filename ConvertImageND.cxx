@@ -1018,7 +1018,7 @@ ImageConverter<TPixel, VDim>
     size_t k = 0;
     double k_frac = atof(argv[1]);
     if(k_frac > 0 && k_frac < 1)
-      k = (size_t) round(k_frac * m_ImageStack.size());
+      k = (size_t) (0.5 + k_frac * m_ImageStack.size());
     else if(k_frac >= 1)
       k = (size_t) atoi(argv[1]);
     else
