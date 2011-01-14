@@ -37,37 +37,13 @@ PadImage<TPixel, VDim>
 
   ImagePointer output = padFilter->GetOutput();
 
-  typename ImageType::IndexType originVox, paddedOriginVox;
-
-  originVox.Fill(0);
-
-  paddedOriginVox[0] = lowerBound[0];
-  paddedOriginVox[1] = lowerBound[1];
-  paddedOriginVox[2] = lowerBound[2];
-
-  itk::Point<double, VDim> originMM, originMM_Padded; 
-
-  
-  
-  img->TransformIndexToPhysicalPoint(originVox, originMM);
-  output->TransformIndexToPhysicalPoint(paddedOriginVox, originMM_Padded);
-
-  
-
-  RealVector origin;
-  for(size_t i = 0; i < 3; i++)
-    {
-      origin[i] = img->GetOrigin()[i] + (originMM[i] - originMM_Padded[i]);
-    }
-
-  padFilter->GetOutput()->SetOrigin(origin.data_block());
-
-  cout << "INP_ORG: " << img->GetOrigin() << endl;
-  cout << "OUT_ORG: " << output->GetOrigin() << endl;
+  // ITK 3.20 fixes the origin for you, don't mess with it
+  //  cout << "INP_ORG: " << img->GetOrigin() << endl;
+  //  cout << "OUT_ORG: " << output->GetOrigin() << endl;
 
   // Put result on stack
   c->m_ImageStack.pop_back();
-  c->m_ImageStack.push_back(padFilter->GetOutput());
+  c->m_ImageStack.push_back(output);
 
 }
 
