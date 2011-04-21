@@ -23,6 +23,7 @@
 #include "ImageLaplacian.h"
 #include "LabelOverlapMeasures.h"
 #include "LabelStatistics.h"
+#include "LandmarksToSpheres.h"
 #include "LevelSetSegmentation.h"
 #include "MathematicalMorphology.h"
 #include "MixtureModel.h"
@@ -153,6 +154,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -iterations" << endl;
   cout << "    -label-overlap" << std::endl;
   cout << "    -label-statistics, -lstat" << endl;
+  cout << "    -landmarks-to-spheres, -lts" << endl;
   cout << "    -laplacian, -laplace" << endl;
   cout << "    -levelset" << endl;
   cout << "    -levelset-curvature" << endl;
@@ -545,6 +547,14 @@ ImageConverter<TPixel, VDim>
     {
     LabelStatistics<TPixel, VDim>(this)();
     return 0;
+    }
+
+  else if(cmd == "-landmarks-to-spheres" || cmd == "-lts")
+    {
+    char *fnland = argv[1];
+    double radius = atof(argv[2]);
+    LandmarksToSpheres<TPixel, VDim> (this)(fnland, radius);
+    return 2;
     }
 
   else if(cmd == "-laplacian" || cmd == "-laplace")

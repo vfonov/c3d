@@ -54,6 +54,7 @@ SET(SOURCES
   adapters/GeneralLinearModel.cxx
   adapters/LabelOverlapMeasures.cxx
   adapters/LabelStatistics.cxx
+  adapters/LandmarksToSpheres.cxx
   adapters/LevelSetSegmentation.cxx
   adapters/MathematicalMorphology.cxx
   adapters/MixtureModel.cxx
