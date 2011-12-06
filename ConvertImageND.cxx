@@ -11,6 +11,7 @@
 #include "ComputeOverlaps.h"
 #include "ConnectedComponents.h"
 #include "ConvertAdapter.h"
+#include "CoordinateMap.h"
 #include "CopyTransform.h"
 #include "CreateImage.h"
 #include "CreateInterpolator.h"
@@ -130,9 +131,11 @@ ImageConverter<TPixel, VDim>
   cout << "    -biascorr" << endl;
   cout << "    -binarize" << endl;
   cout << "    -centroid" << endl;
-  cout << "    -connected-components, -connected, -comp" << endl;
   cout << "    -clear" << endl;
   cout << "    -clip" << endl;
+  cout << "    -connected-components, -connected, -comp" << endl;
+  cout << "    -coordinate-map-voxel, -cmv" << endl;
+  cout << "    -coordinate-map-physical, -cmp" << endl;
   cout << "    -copy-transform, -ct" << endl;
   cout << "    -create" << endl;
   cout << "    -dilate" << endl;
@@ -178,6 +181,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -oo, -output-multiple" << endl;
   cout << "    -orient" << endl;
   cout << "    -origin" << endl;
+  cout << "    -origin-voxel" << endl;
   cout << "    -overlap" << endl;
   cout << "    -overlay-label-image, -oli" << endl;
   cout << "    -pad" << endl;
@@ -332,6 +336,18 @@ ImageConverter<TPixel, VDim>
     double iMax = ReadIntensityValue(argv[2]);
     ClipImageIntensity<TPixel, VDim>(this)(iMin, iMax);
     return 2;
+    }
+
+  else if(cmd == "-coordinate-map-voxel" || cmd == "-cmv")
+    {
+    CoordinateMap<TPixel,VDim>(this)(false);
+    return 0;
+    }
+
+  else if(cmd == "-coordinate-map-physical" || cmd == "-cmp")
+    {
+    CoordinateMap<TPixel,VDim>(this)(true);
+    return 0;
     }
 
   else if(cmd == "-copy-transform" || cmd == "-ct")
@@ -809,7 +825,7 @@ ImageConverter<TPixel, VDim>
     int nc, np;
 
     // A parameter can be optionally specified (how many components)
-    RegularExpression re("[0-9]+");
+    RegularExpression re("^[0-9]+$");
     if(re.find(argv[1]))
       { nc = atoi(argv[1]); np=2; }
     else
@@ -887,6 +903,20 @@ ImageConverter<TPixel, VDim>
     {
     RealVector org = ReadRealVector(argv[1], true);
     m_ImageStack.back()->SetOrigin(org.data_block());
+    return 1;
+    }
+
+  else if(cmd == "-origin-voxel")
+    {
+    RealVector vec = ReadRealVector(argv[1], false);
+    cout << "VOX : " << vec << endl;
+
+    // Get physical coordinate of this voxel
+    vnl_matrix_fixed<double, VDim+1, VDim+1> mat = 
+      m_ImageStack.back()->GetVoxelSpaceToRASPhysicalSpaceMatrix().GetVnlMatrix();
+    RealVector org = -vec;
+    m_ImageStack.back()->SetOrigin(org.data_block());
+    cout << "ORG : " << org << endl;
     return 1;
     }
 
@@ -1538,9 +1568,17 @@ ImageConverter<TPixel, VDim>
   ReadVecSpec(vec_in, x, type);
 
   // Check the type of the vector
-  if(type != VOXELS && type != PHYSICAL)
+  if(type != VOXELS && type != PHYSICAL && type != PERCENT)
     throw ConvertException(
-      "Invalid vector spec %s (must end with 'mm' or 'vox')", vec_in);
+      "Invalid vector spec %s (must end with 'mm' or 'vox' or '%' )", vec_in);
+
+  // If in percent, scale by voxel size
+  if(type == PERCENT)
+    {
+    for(size_t i = 0; i < VDim; i++)
+      x[i] *= m_ImageStack.back()->GetBufferedRegion().GetSize()[i] / 100.0;
+    type = VOXELS;
+    }
 
   // If the vector is in vox units, map it to physical units
   if(type == VOXELS)

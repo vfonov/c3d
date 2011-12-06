@@ -44,18 +44,32 @@ LabelStatistics<TPixel, VDim>
   // Update the filter
   fltStat->Update();
 
-  // Get the number of labels 
-  printf("LabelID        Mean        StdD         Max         Min       Count\n");
+  // Get the voxel dimensions
+  double dim = 1.0;
+  for(size_t i = 0; i < VDim; i++)
+    dim *= label->GetSpacing()[i];
+
+  // Get the number of labels                                                             .
+  printf("LabelID        Mean        StdD         Max         Min       Count     Vol(mm^%1d)        Extent(Vox)\n", VDim);
   for(set<short>::iterator it = sval.begin(); it != sval.end(); ++it)
     {
     // printf("xxxxx    xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx  xxxxxxxxxx");
-    printf("%5i    %10.5f  %10.5f  %10.5f  %10.5f  %10lu\n",
+    printf("%5i    %10.5f  %10.5f  %10.5f  %10.5f  %10lu  %12.3f ",
       (int) *it, 
       fltStat->GetMean(*it), 
       fltStat->GetSigma(*it), 
       fltStat->GetMaximum(*it), 
       fltStat->GetMinimum(*it), 
-      (long unsigned) fltStat->GetCount(*it));
+      (long unsigned) fltStat->GetCount(*it),
+      fltStat->GetCount(*it) * dim);
+
+    // Bounding box
+    typename StatFilter::BoundingBoxType bbox = fltStat->GetBoundingBox(*it);
+    for(size_t i = 0; i < VDim; i++)
+      {
+      printf(" %5lu", 1 + bbox[i*2+1] - bbox[i*2]);
+      }
+    printf("\n");
     }
 }
 

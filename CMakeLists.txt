@@ -42,6 +42,7 @@ SET(SOURCES
   adapters/ComputeFFT.cxx
   adapters/ComputeOverlaps.cxx
   adapters/ConnectedComponents.cxx
+  adapters/CoordinateMap.cxx
   adapters/CopyTransform.cxx
   adapters/CreateImage.cxx
   adapters/CreateInterpolator.cxx
