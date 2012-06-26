@@ -1,6 +1,6 @@
 #include "MixtureModel.h"
 
-#include "itkImageToListAdaptor.h"
+#include "itkImageToListSampleAdaptor.h"
 #include "itkGaussianMixtureModelComponent.h"
 #include "itkExpectationMaximizationMixtureModelEstimator.h"
 #include "itkScalarToArrayCastImageFilter.h"
@@ -26,7 +26,7 @@ MixtureModel<TPixel, VDim>
   castFilter->SetInput(img);
   castFilter->Update() ;
   
-  typedef ImageToListAdaptor<ArrayPixelImageType> DataSampleType;
+  typedef ImageToListSampleAdaptor<ArrayPixelImageType> DataSampleType;
   typename DataSampleType::Pointer sample = DataSampleType::New();
   sample->SetImage(castFilter->GetOutput());
 
@@ -77,7 +77,7 @@ MixtureModel<TPixel, VDim>
       "Class " << i << ": " <<
       "mu = " << comps[i]->GetFullParameters()[0] << "; " <<
       "sigma = " << sqrt(comps[i]->GetFullParameters()[1]) << "; " <<
-      "alpha = " << (*estimator->GetProportions())[i] << "; " << endl;
+      "alpha = " << (estimator->GetProportions())[i] << "; " << endl;
     }
 
   // Do some processing ...
