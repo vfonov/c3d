@@ -12,6 +12,9 @@
 #include "vnl/algo/vnl_qr.h"
 #include "ConvertException.h"
 #include <iostream>
+#ifdef HAVE_MINC4ITK
+#include "itkMincImageIOFactory.h"
+#endif //HAVE_MINC4ITK
 
 #define RAS_TO_FSL 0
 #define FSL_TO_RAS 1
@@ -564,7 +567,11 @@ int main(int argc, char *argv[])
 {
   // Show usage
   if(argc < 2) return usage();
-
+  
+#ifdef HAVE_MINC4ITK 
+  itk::RegisterMincIO();
+#endif //HAVE_MINC4ITK
+  
   // Set up the images that might be loaded
   ImageType::Pointer ref = NULL, src = NULL;
 
