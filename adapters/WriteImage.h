@@ -12,18 +12,18 @@ public:
 
   WriteImage(Converter *c) : c(c) {}
 
-  void operator() (const char *file, bool force, int pos=-1);
+  void operator() (const char *file, bool force, int pos=-1,const char *history=NULL);
 
-  void WriteMultiComponent(const char *file, int ncomp);
+  void WriteMultiComponent(const char *file, int ncomp,const char *history=NULL);
 
 private:
   Converter *c;
 
   template <class TOutPixel> 
-    void TemplatedWriteImage(const char *file, double xRoundFactor, int pos);
+    void TemplatedWriteImage(const char *file, double xRoundFactor, int pos,const char *history=NULL);
 
   template <class TOutPixel> 
-    void TemplatedWriteMultiComponentImage(const char *file, double xRoundFactor, int pstart);
+    void TemplatedWriteMultiComponentImage(const char *file, double xRoundFactor, int pstart,const char *history=NULL);
 
   void MakeSPMOriginFix(itk::ImageBase<VDim> *input, itk::ImageBase<VDim> *output);
 

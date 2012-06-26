@@ -5,11 +5,16 @@
 #include "itkMetaDataDictionary.h"
 #include "itkMetaDataObject.h"
 
+#ifdef HAVE_MINC4ITK 
+#include "itkMincHelpers.h"
+#endif// HAVE_MINC4ITK 
+
+
 template<class TPixel, unsigned int VDim>
 template<class TOutPixel>
 void 
 WriteImage<TPixel, VDim>
-::TemplatedWriteImage(const char *file, double xRoundFactor, int pos)
+::TemplatedWriteImage(const char *file, double xRoundFactor, int pos,const char *history)
 {
   // Get the input image
   if(c->m_ImageStack.size() == 0)
@@ -45,6 +50,13 @@ WriteImage<TPixel, VDim>
   // Write the image out
   typedef itk::ImageFileWriter<OutputImageType> WriterType;
   typename WriterType::Pointer writer = WriterType::New();
+  
+#ifdef HAVE_MINC4ITK 
+  minc::copy_metadata(output,input);
+  // add history metainfo
+  if(history) minc::append_history(output,history);
+#endif //HAVE_MINC4ITK 
+  
   writer->SetInput(output);
   writer->SetFileName(file);
   try { writer->Update(); }
@@ -89,7 +101,7 @@ template<class TPixel, unsigned int VDim>
 template<class TOutPixel>
 void 
 WriteImage<TPixel, VDim>
-::TemplatedWriteMultiComponentImage(const char *file, double xRoundFactor, int pstart)
+::TemplatedWriteMultiComponentImage(const char *file, double xRoundFactor, int pstart,const char * history)
 {
   size_t ncomp = c->m_ImageStack.size() - pstart;
   if(ncomp <= 0)
@@ -132,6 +144,13 @@ WriteImage<TPixel, VDim>
       *out = (TOutPixel) (*buf + xRoundFactor);
     }
 
+
+#ifdef HAVE_MINC4ITK 
+  minc::copy_metadata(output,itop);
+  // add history metainfo
+  if(history) minc::append_history(output,history);
+#endif //HAVE_MINC4ITK 
+
   // Write the image out
   typedef itk::ImageFileWriter<OutputImageType> WriterType;
   typename WriterType::Pointer writer = WriterType::New();
@@ -147,37 +166,37 @@ WriteImage<TPixel, VDim>
 template <class TPixel, unsigned int VDim>
 void
 WriteImage<TPixel, VDim>
-::WriteMultiComponent(const char *file, int ncomp)
+::WriteMultiComponent(const char *file, int ncomp,const char *history)
 {
   // Get the position of the first image to include
   int pos = c->m_ImageStack.size() - ncomp;
 
   if(c->m_TypeId == "char" || c->m_TypeId == "byte")
-    TemplatedWriteMultiComponentImage<char>(file, c->m_RoundFactor, pos);
+    TemplatedWriteMultiComponentImage<char>(file, c->m_RoundFactor, pos,history);
   if(c->m_TypeId == "uchar" || c->m_TypeId == "ubyte")
-    TemplatedWriteMultiComponentImage<unsigned char>(file, c->m_RoundFactor, pos);
+    TemplatedWriteMultiComponentImage<unsigned char>(file, c->m_RoundFactor, pos,history);
   
   if(c->m_TypeId == "short") 
-    TemplatedWriteMultiComponentImage<short>(file, c->m_RoundFactor, pos);
+    TemplatedWriteMultiComponentImage<short>(file, c->m_RoundFactor, pos,history);
   if(c->m_TypeId == "ushort")
-    TemplatedWriteMultiComponentImage<unsigned short>(file, c->m_RoundFactor, pos);
+    TemplatedWriteMultiComponentImage<unsigned short>(file, c->m_RoundFactor, pos,history);
 
   if(c->m_TypeId == "int") 
-    TemplatedWriteMultiComponentImage<int>(file, c->m_RoundFactor, pos);
+    TemplatedWriteMultiComponentImage<int>(file, c->m_RoundFactor, pos,history);
   if(c->m_TypeId == "uint")
-    TemplatedWriteMultiComponentImage<unsigned int>(file, c->m_RoundFactor, pos);
+    TemplatedWriteMultiComponentImage<unsigned int>(file, c->m_RoundFactor, pos,history);
 
   if(c->m_TypeId == "float") 
-    TemplatedWriteMultiComponentImage<float>(file, 0.0, pos);
+    TemplatedWriteMultiComponentImage<float>(file, 0.0, pos,history);
   if(c->m_TypeId == "double")
-    TemplatedWriteMultiComponentImage<double>(file, 0.0, pos);
+    TemplatedWriteMultiComponentImage<double>(file, 0.0, pos,history);
 }
 
 
 template <class TPixel, unsigned int VDim>
 void
 WriteImage<TPixel, VDim>
-::operator() (const char *file, bool force, int pos)
+::operator() (const char *file, bool force, int pos,const char* history)
 {
   // Unless in 'force' mode, check if the image already exists
   if(!force && itksys::SystemTools::FileExists(file))
@@ -187,24 +206,24 @@ WriteImage<TPixel, VDim>
     }
 
   if(c->m_TypeId == "char" || c->m_TypeId == "byte")
-    TemplatedWriteImage<char>(file, c->m_RoundFactor, pos);
+    TemplatedWriteImage<char>(file, c->m_RoundFactor, pos,history);
   if(c->m_TypeId == "uchar" || c->m_TypeId == "ubyte")
     TemplatedWriteImage<unsigned char>(file, c->m_RoundFactor, pos);
   
   if(c->m_TypeId == "short") 
-    TemplatedWriteImage<short>(file, c->m_RoundFactor, pos);
+    TemplatedWriteImage<short>(file, c->m_RoundFactor, pos,history);
   if(c->m_TypeId == "ushort")
-    TemplatedWriteImage<unsigned short>(file, c->m_RoundFactor, pos);
+    TemplatedWriteImage<unsigned short>(file, c->m_RoundFactor, pos,history);
 
   if(c->m_TypeId == "int") 
-    TemplatedWriteImage<int>(file, c->m_RoundFactor, pos);
+    TemplatedWriteImage<int>(file, c->m_RoundFactor, pos,history);
   if(c->m_TypeId == "uint")
-    TemplatedWriteImage<unsigned int>(file, c->m_RoundFactor, pos);
+    TemplatedWriteImage<unsigned int>(file, c->m_RoundFactor, pos,history);
 
   if(c->m_TypeId == "float") 
-    TemplatedWriteImage<float>(file, 0.0, pos);
+    TemplatedWriteImage<float>(file, 0.0, pos,history);
   if(c->m_TypeId == "double")
-    TemplatedWriteImage<double>(file, 0.0, pos);
+    TemplatedWriteImage<double>(file, 0.0, pos,history);
 }
 
 

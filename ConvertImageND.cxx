@@ -115,6 +115,8 @@ ImageConverter<TPixel,VDim>
   // Create an interpolator
   m_Interpolation = "linear";
   CreateInterpolator<TPixel, VDim>(this).CreateLinear();
+  
+  m_History=NULL;
 }
 
 template<class TPixel, unsigned int VDim>
@@ -815,7 +817,7 @@ ImageConverter<TPixel, VDim>
   else if(cmd == "-o" || cmd == "-output")
     {
     WriteImage<TPixel, VDim> adapter(this);
-    adapter(argv[1], true);
+    adapter(argv[1], true,-1,m_History);
     return 1;
     }
 
@@ -833,7 +835,7 @@ ImageConverter<TPixel, VDim>
 
     // Create a writer
     WriteImage<TPixel, VDim> adapter(this);
-    adapter.WriteMultiComponent(argv[np], nc);
+    adapter.WriteMultiComponent(argv[np], nc,m_History);
     return np;
     }
   
@@ -857,7 +859,7 @@ ImageConverter<TPixel, VDim>
         {
         sprintf(buffer, argv[1], i);
         WriteImage<TPixel, VDim> adapter(this);
-        adapter(buffer, true, i);
+        adapter(buffer, true, i,m_History);
         }
       return 1;
       }
@@ -880,7 +882,7 @@ ImageConverter<TPixel, VDim>
       for(size_t j = 0; j < nfiles; j++)
         {
         WriteImage<TPixel, VDim> adapter(this);
-        adapter(argv[j+1], true, m_ImageStack.size() - nfiles + j);
+        adapter(argv[j+1], true, m_ImageStack.size() - nfiles + j,m_History);
         }
 
       return nfiles;
@@ -1434,10 +1436,11 @@ ImageConverter<TPixel, VDim>
 template<class TPixel, unsigned int VDim>
 int
 ImageConverter<TPixel, VDim>
-::ProcessCommandLine(int argc, char *argv[])
+::ProcessCommandLine(int argc, char *argv[],const char* history)
 {
   // Disable multithreading
   itk::MultiThreader::SetGlobalDefaultNumberOfThreads(1);
+  m_History=history;
 
   // Check the number of arguments
   if(argc == 1)
@@ -1472,13 +1475,13 @@ ImageConverter<TPixel, VDim>
         if(i != argc-1)
           {
           ReadImage<TPixel, VDim> adapter(this);
-          adapter(argv[i]);
+          adapter(argv[i],history);
           }
         else
           {
           // Write the image, but in safe mode
           WriteImage<TPixel, VDim> adapter(this);
-          adapter(argv[i], false);
+          adapter(argv[i], false,-1,m_History);
           }
         }
       }

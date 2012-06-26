@@ -1,3 +1,9 @@
+===================
+Convert3D tool with minc support
+===================
+See http://www.itksnap.org/pmwiki/pmwiki.php?n=Convert3D.Documentation for documentation
+
+
 ====================
 ADDING A NEW FEATURE
 ====================

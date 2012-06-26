@@ -46,7 +46,7 @@ public:
   typedef itk::InterpolateImageFunction<ImageType, double> Interpolator;
   
   ImageConverter();
-  int ProcessCommandLine(int argc, char *argv[]);
+  int ProcessCommandLine(int argc, char *argv[],const char *history=NULL);
 
   friend class ConvertAdapter<TPixel, VDim>;
 
@@ -116,6 +116,9 @@ private:
 
   // Label set for split/merge
   LabelSet m_SplitLabelSet;
+  
+  // command line history info
+  const char * m_History;
   
 public:
 

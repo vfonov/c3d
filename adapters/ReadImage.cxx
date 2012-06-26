@@ -7,7 +7,7 @@
 template <class TPixel, unsigned int VDim>
 void
 ReadImage<TPixel, VDim>
-::operator() (const char *file)
+::operator() (const char *file,const char *history)
 {
   // Report
   *c->verbose << "Reading #" << (1 + c->m_ImageStack.size()) << " from " << file << endl;

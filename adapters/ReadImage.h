@@ -12,7 +12,7 @@ public:
 
   ReadImage(Converter *c) : c(c) {}
 
-  void operator() (const char *file);
+  void operator() (const char *file,const char *history=NULL);
 
 private:
   Converter *c;
