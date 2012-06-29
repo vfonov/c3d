@@ -62,9 +62,11 @@ ReadImage<TPixel, VDim>
 
     // Report
     *c->verbose << "  Splitting " << iobase->GetNumberOfComponents() << "-component image." << endl;
-
     // Split the vector image into component images
     typename VectorImageType::Pointer vec = reader->GetOutput();
+    
+    c->SetMetaDataDictionary(vec->GetMetaDataDictionary());
+    
     size_t ncomp = vec->GetVectorLength();
     for(size_t i = 0; i < ncomp; i++)
       {
@@ -97,6 +99,7 @@ ReadImage<TPixel, VDim>
       }
   
     ImagePointer image = reader->GetOutput();
+    c->SetMetaDataDictionary(image->GetMetaDataDictionary());
     c->m_ImageStack.push_back(image);
     }  
 }

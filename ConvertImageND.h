@@ -5,6 +5,7 @@
 #include "itkImageRegionIteratorWithIndex.h"
 #include "itkInterpolateImageFunction.h"
 #include "ConvertException.h"
+#include <itkMetaDataDictionary.h>
 
 #include <iostream>
 #include <cctype>
@@ -120,6 +121,9 @@ private:
   // command line history info
   const char * m_History;
   
+  // image metadata to be preserved
+  itk::MetaDataDictionary m_Metadata;
+  
 public:
 
   // Stack of images from the command line
@@ -159,6 +163,10 @@ public:
   // Verbose output stream
   std::ostringstream devnull;
   std::ostream *verbose;
+  
+  // MetaData
+  itk::MetaDataDictionary& GetMetaDataDictionary(void);
+  void SetMetaDataDictionary(itk::MetaDataDictionary& mtd);
 };
 
 #endif

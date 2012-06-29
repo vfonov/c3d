@@ -52,7 +52,7 @@ WriteImage<TPixel, VDim>
   typename WriterType::Pointer writer = WriterType::New();
   
 #ifdef HAVE_MINC4ITK 
-  minc::copy_metadata(output,input);
+  output->SetMetaDataDictionary(c->GetMetaDataDictionary());
   // add history metainfo
   if(history) minc::append_history(output,history);
 #endif //HAVE_MINC4ITK 
@@ -146,7 +146,7 @@ WriteImage<TPixel, VDim>
 
 
 #ifdef HAVE_MINC4ITK 
-  minc::copy_metadata(output,itop);
+  output->SetMetaDataDictionary(c->GetMetaDataDictionary());
   // add history metainfo
   if(history) minc::append_history(output,history);
 #endif //HAVE_MINC4ITK 

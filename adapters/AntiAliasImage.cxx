@@ -6,6 +6,10 @@ void
 AntiAliasImage<TPixel, VDim>
 ::operator() (double xIsoSurface)
 {
+  // Check input availability
+  if(c->m_ImageStack.size() < 1)
+    throw ConvertException("No images on stack");
+  
   // Get the input image
   ImagePointer input = c->m_ImageStack.back();
 

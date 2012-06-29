@@ -14,6 +14,10 @@ void
 BiasFieldCorrectionN4<TPixel, VDim>
 ::operator() ()
 {
+  // Check input availability
+  if(c->m_ImageStack.size() < 1)
+    throw ConvertException("No images on stack");
+  
 
   // Get image from stack
   ImagePointer mri = c->m_ImageStack.back();
@@ -24,8 +28,27 @@ BiasFieldCorrectionN4<TPixel, VDim>
   typename CorrecterType::Pointer correcter = CorrecterType::New();
 
   // distance (in mm) of the mesh resolution at the base level
-  float splineDistance = 100;
-
+  float  n4_spline_distance = 100;
+  // image shrink factor
+  int    n4_shrink_factor=4;
+  int    n4_spline_order=3;
+  int    n4_histogram_bins= 200;
+  double n4_fwhm=0.15;
+  double n4_convergence_threshold=0.001;
+  double n4_weiner_noise=0.01;
+  int    n4_max_iterations=100;
+  
+  *c->verbose << "N4 BiasFieldCorrection #" << c->m_ImageStack.size() << endl;
+  *c->verbose << "  Shrink factor: " << n4_shrink_factor << endl;
+  *c->verbose << "  Spline distance: " << n4_spline_distance << endl;
+  *c->verbose << "  Number of histogram bins: "<< n4_histogram_bins<<endl;
+  *c->verbose << "  Weiner Filter noise: "<< n4_weiner_noise<<endl;
+  *c->verbose << "  Bias FWHM: "<< n4_fwhm<<endl;
+  *c->verbose << "  Max Number of Iterations: "<< n4_max_iterations<<endl;
+  *c->verbose << "  Convergence Threshold: "<< n4_convergence_threshold<<endl;
+  *c->verbose << "  Spline Order: "<< n4_spline_order<<endl;
+  
+  
   typename CorrecterType::ArrayType numberOfControlPoints;
 
   typename ImageType::IndexType inputImageIndex =
@@ -43,9 +66,9 @@ BiasFieldCorrectionN4<TPixel, VDim>
     float domain = static_cast<float>( mri->
       GetLargestPossibleRegion().GetSize()[d] - 1 ) * mri->GetSpacing()[d];
     unsigned int numberOfSpans = static_cast<unsigned int>(
-      vcl_ceil( domain / splineDistance ) );
+      vcl_ceil( domain / n4_spline_distance ) );
     unsigned long extraPadding = static_cast<unsigned long>( ( numberOfSpans *
-      splineDistance - domain ) / mri->GetSpacing()[d] + 0.5 );
+      n4_spline_distance - domain ) / mri->GetSpacing()[d] + 0.5 );
     lowerBound[d] = static_cast<unsigned long>( 0.5 * extraPadding );
     upperBound[d] = extraPadding - lowerBound[d];
     newOrigin[d] -= ( static_cast<float>( lowerBound[d] ) *
@@ -79,6 +102,7 @@ BiasFieldCorrectionN4<TPixel, VDim>
   otsu->SetOutsideValue( 1 );
   otsu->Update();
   ImagePointer mask = otsu->GetOutput();
+  *c->verbose << "  Otsu threshold: "<<otsu->GetThreshold()<<endl;
 
   typedef itk::ConstantPadImageFilter<ImageType, ImageType> MaskPadderType;
   typename MaskPadderType::Pointer maskPadder = MaskPadderType::New();
@@ -98,12 +122,11 @@ BiasFieldCorrectionN4<TPixel, VDim>
   correcter->SetMaskImage( maskshrinker->GetOutput() );
 
   // These parameters are pretty standard
-  correcter->SetSplineOrder( 3 );
-  correcter->SetNumberOfHistogramBins( 200 );
-  correcter->SetBiasFieldFullWidthAtHalfMaximum( 0.15 );
-  correcter->SetConvergenceThreshold( 0.001 );
-  correcter->SetWeinerFilterNoise( 0.01 );
-  correcter->SetBiasFieldFullWidthAtHalfMaximum( 0.15 );
+  correcter->SetSplineOrder( n4_spline_order );
+  correcter->SetNumberOfHistogramBins( n4_histogram_bins );
+  correcter->SetBiasFieldFullWidthAtHalfMaximum( n4_fwhm );
+  correcter->SetConvergenceThreshold( n4_convergence_threshold );
+  correcter->SetWeinerFilterNoise( n4_weiner_noise );
 
   // You will probably want to have an option for the maximum number of
   //  iterations at each level, the shrink factor, and the spline distance.
@@ -112,9 +135,9 @@ BiasFieldCorrectionN4<TPixel, VDim>
 		correcter->SetNumberOfFittingLevels( numberOfFittingLevels );
   typename CorrecterType::VariableSizeArrayType maximumNumberOfIterations;
   maximumNumberOfIterations.SetSize( 3 );
-  maximumNumberOfIterations[0] = 100;
-  maximumNumberOfIterations[1] = 50;
-  maximumNumberOfIterations[2] = 50;
+  maximumNumberOfIterations[0] = n4_max_iterations;
+  maximumNumberOfIterations[1] = n4_max_iterations;
+  maximumNumberOfIterations[2] = n4_max_iterations;
   correcter->SetMaximumNumberOfIterations( maximumNumberOfIterations );
 
   // Progress meter

@@ -1986,6 +1986,23 @@ ImageConverter<TPixel, VDim>
   return true;
 }
 
+template<class TPixel, unsigned int VDim>
+itk::MetaDataDictionary&
+ImageConverter<TPixel, VDim>
+::GetMetaDataDictionary(void)
+{
+  return m_Metadata;
+}
+
+template<class TPixel, unsigned int VDim>
+void 
+ImageConverter<TPixel, VDim>
+::SetMetaDataDictionary(itk::MetaDataDictionary& mtd)
+{
+  m_Metadata=mtd;
+}
+
+
 template class ImageConverter<double, 2>;
 template class ImageConverter<double, 3>;
 
