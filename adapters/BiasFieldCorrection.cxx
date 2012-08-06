@@ -15,9 +15,16 @@ BiasFieldCorrection<TPixel, VDim>
   if(c->m_ImageStack.size() < 1)
     throw ConvertException("No images on stack");
 
-  int n3_shrink_factor=4;
-  float  n3_spline_distance = 100;
-  
+  double  n4_spline_distance = c->n4_spline_distance;
+  int     n4_shrink_factor=c->n4_shrink_factor;
+  int     n4_spline_order=c->n4_spline_order;
+  int     n4_histogram_bins= c->n4_histogram_bins;
+  double  n4_fwhm=c->n4_fwhm;
+  double  n4_convergence_threshold=c->n4_convergence_threshold;
+  double  n4_weiner_noise=c->n4_weiner_noise;
+  int     n4_max_iterations=c->n4_max_iterations;
+  bool    n4_optimal_scaling=c->n4_optimal_scaling;
+  bool    n4_output_field=c->n4_output_field;
   
   // Get image from stack
   ImagePointer mri = c->m_ImageStack.back();
@@ -31,14 +38,14 @@ BiasFieldCorrection<TPixel, VDim>
   typedef itk::ShrinkImageFilter<ImageType, ImageType> ShrinkerType;
   typename ShrinkerType::Pointer shrinker = ShrinkerType::New();
   shrinker->SetInput(mri);
-  shrinker->SetShrinkFactors(n3_shrink_factor);
+  shrinker->SetShrinkFactors(n4_shrink_factor);
   shrinker->Update();
 
   // Compute mask using Otsu threshold
   typedef itk::OtsuThresholdImageFilter<ImageType, ImageType> ThresholderType;
   typename ThresholderType::Pointer otsu = ThresholderType::New();
   otsu->SetInput(mri);
-  otsu->SetNumberOfHistogramBins( 200 );
+  otsu->SetNumberOfHistogramBins( n4_histogram_bins );
   otsu->SetInsideValue( 0 );
   otsu->SetOutsideValue( 1 );
   otsu->Update();
@@ -49,15 +56,25 @@ BiasFieldCorrection<TPixel, VDim>
   // Shrink the mask
   typename ShrinkerType::Pointer maskshrinker = ShrinkerType::New();
   maskshrinker->SetInput( mask);
-  maskshrinker->SetShrinkFactors(n3_shrink_factor);
+  maskshrinker->SetShrinkFactors(n4_shrink_factor);
   maskshrinker->Update();
 
   // Bias filter
   typedef itk::N3MRIBiasFieldCorrectionImageFilter<ImageType, ImageType, ImageType> CorrecterType;
   typename CorrecterType::Pointer correcter = CorrecterType::New();
+  // set parameters
+  correcter->SetNumberOfHistogramBins(n4_histogram_bins);
+  correcter->SetWeinerFilterNoise( n4_weiner_noise );
+  correcter->SetBiasFieldFullWidthAtHalfMaximum( n4_fwhm );
+  correcter->SetMaximumNumberOfIterations( n4_max_iterations );
+  correcter->SetConvergenceThreshold( n4_convergence_threshold );
+  correcter->SetSplineOrder( n4_spline_order );
+  correcter->SetUseOptimalBiasFieldScaling( n4_optimal_scaling );
+  
   correcter->SetInput( shrinker->GetOutput() );
   correcter->SetMaskImage( maskshrinker->GetOutput() );
-
+  
+  
   typename CorrecterType::ArrayType numberOfControlPoints;
 
   typename ImageType::IndexType inputImageIndex =
@@ -75,9 +92,9 @@ BiasFieldCorrection<TPixel, VDim>
     float domain = static_cast<float>( mri->
       GetLargestPossibleRegion().GetSize()[d] - 1 ) * mri->GetSpacing()[d];
     unsigned int numberOfSpans = static_cast<unsigned int>(
-      vcl_ceil( domain / n3_spline_distance ) );
+      vcl_ceil( domain / n4_spline_distance ) );
     unsigned long extraPadding = static_cast<unsigned long>( ( numberOfSpans *
-      n3_spline_distance - domain ) / mri->GetSpacing()[d] + 0.5 );
+      n4_spline_distance - domain ) / mri->GetSpacing()[d] + 0.5 );
     lowerBound[d] = static_cast<unsigned long>( 0.5 * extraPadding );
     upperBound[d] = extraPadding - lowerBound[d];
     newOrigin[d] -= ( static_cast<float>( lowerBound[d] ) *
@@ -88,7 +105,7 @@ BiasFieldCorrection<TPixel, VDim>
   correcter->SetNumberOfControlPoints( numberOfControlPoints );
   
   
-  *c->verbose << "  Shrink factor: " << n3_shrink_factor << endl;
+  *c->verbose << "  Shrink factor: " << n4_shrink_factor << endl;
   *c->verbose << "  Number of histogram bins: "<< correcter->GetNumberOfHistogramBins()<<endl;
   *c->verbose << "  Weiner Filter noise: "<< correcter->GetWeinerFilterNoise()<<endl;
   *c->verbose << "  Bias FWHM: "<< correcter->GetBiasFieldFullWidthAtHalfMaximum()<<endl;
@@ -96,6 +113,7 @@ BiasFieldCorrection<TPixel, VDim>
   *c->verbose << "  Convergence Threshold: "<< correcter->GetConvergenceThreshold()<<endl;
   *c->verbose << "  Spline Order: "<< correcter->GetSplineOrder()<<endl;
   *c->verbose << "  Use Optimal Bias Field scaling: "<< correcter->GetUseOptimalBiasFieldScaling()<<endl;
+  *c->verbose << "  Output correction field: "<< n4_output_field<<endl;
 
   // Progress meter
   // typedef CommandIterationUpdate<CorrecterType> CommandType;
@@ -143,14 +161,19 @@ BiasFieldCorrection<TPixel, VDim>
   expFilter->SetInput( logField );
   expFilter->Update();
 
-  typedef itk::DivideImageFilter<ImageType, ImageType, ImageType> DividerType;
-  typename DividerType::Pointer divider = DividerType::New();
-  divider->SetInput1( mri );
-  divider->SetInput2( expFilter->GetOutput() );
-  divider->Update();
+  if( n4_output_field )
+  {
+    c->m_ImageStack.push_back(expFilter->GetOutput());
+  } else {
+    typedef itk::DivideImageFilter<ImageType, ImageType, ImageType> DividerType;
+    typename DividerType::Pointer divider = DividerType::New();
+    divider->SetInput1( mri );
+    divider->SetInput2( expFilter->GetOutput() );
+    divider->Update();
 
-  // Update
-  c->m_ImageStack.push_back(divider->GetOutput());
+    // Update
+    c->m_ImageStack.push_back(divider->GetOutput());
+  }
 }
 
 // Invocations

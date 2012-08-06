@@ -28,15 +28,16 @@ BiasFieldCorrectionN4<TPixel, VDim>
   typename CorrecterType::Pointer correcter = CorrecterType::New();
 
   // distance (in mm) of the mesh resolution at the base level
-  float  n4_spline_distance = 100;
-  // image shrink factor
-  int    n4_shrink_factor=4;
-  int    n4_spline_order=3;
-  int    n4_histogram_bins= 200;
-  double n4_fwhm=0.15;
-  double n4_convergence_threshold=0.001;
-  double n4_weiner_noise=0.01;
-  int    n4_max_iterations=100;
+  double  n4_spline_distance = c->n4_spline_distance;
+  int     n4_shrink_factor=c->n4_shrink_factor;
+  int     n4_spline_order=c->n4_spline_order;
+  int     n4_histogram_bins= c->n4_histogram_bins;
+  double  n4_fwhm=c->n4_fwhm;
+  double  n4_convergence_threshold=c->n4_convergence_threshold;
+  double  n4_weiner_noise=c->n4_weiner_noise;
+  int     n4_max_iterations=c->n4_max_iterations;
+  bool    n4_optimal_scaling=c->n4_optimal_scaling;
+  bool    n4_output_field=c->n4_output_field;
   
   *c->verbose << "N4 BiasFieldCorrection #" << c->m_ImageStack.size() << endl;
   *c->verbose << "  Shrink factor: " << n4_shrink_factor << endl;
@@ -206,10 +207,14 @@ BiasFieldCorrectionN4<TPixel, VDim>
   biasFieldCropper->SetInput( expFilter->GetOutput() );
   biasFieldCropper->SetExtractionRegion( inputRegion );
   biasFieldCropper->Update();
+  
+  if( n4_output_field )
+  {
+    c->m_ImageStack.push_back( biasFieldCropper->GetOutput() );
+  } else {
+    c->m_ImageStack.push_back( cropper->GetOutput() );
+  }
 
-  // Update
-  c->m_ImageStack.push_back( cropper->GetOutput() );
-//   c->m_ImageStack.push_back( biasFieldCropper->GetOutput() );
 }
 
 // Invocations

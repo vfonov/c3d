@@ -155,6 +155,22 @@ public:
 
   // Level set algorithm parameters
   double m_LevSetCurvature, m_LevSetAdvection;
+  
+
+  // N3 and N4 filter parameters
+  // distance (in mm) of the mesh resolution at the base level
+  double  n4_spline_distance ; 
+  // image shrink factor
+  int     n4_shrink_factor;
+  int     n4_spline_order;
+  int     n4_histogram_bins;
+  double  n4_fwhm;
+  double  n4_convergence_threshold;
+  double  n4_weiner_noise;
+  int     n4_max_iterations;
+  bool    n4_optimal_scaling;
+  bool    n4_output_field;
+  
 
   // How % is handled for intensity specs
   enum PercentIntensityMode { PIM_QUANTILE, PIM_FGQUANTILE, PIM_RANGE };
