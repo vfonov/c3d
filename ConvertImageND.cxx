@@ -156,6 +156,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -n4_max_iterations <n>" << endl;
   cout << "    -n4_optimal_scaling <0/1>" << endl;
   cout << "    -n4_output_field <0/1>" << endl;
+  cout << "    -n4_use_mask <0/1>" << endl;
   
   cout << "    -binarize" << endl;
   cout << "    -centroid" << endl;
@@ -399,6 +400,13 @@ ImageConverter<TPixel, VDim>
     return 1;
   }
 
+  else if(cmd == "-n4_use_mask")
+  {
+    n4_use_mask=atoi(argv[1]);
+    *verbose << "N4 use mask " << n4_use_mask << endl;
+    return 1;
+  }
+  
   // f(x) = (x == xBackground) ? 0 : 1
   else if(cmd == "-binarize")
     {

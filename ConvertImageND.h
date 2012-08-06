@@ -170,7 +170,7 @@ public:
   int     n4_max_iterations;
   bool    n4_optimal_scaling;
   bool    n4_output_field;
-  
+  bool    n4_use_mask;
 
   // How % is handled for intensity specs
   enum PercentIntensityMode { PIM_QUANTILE, PIM_FGQUANTILE, PIM_RANGE };
