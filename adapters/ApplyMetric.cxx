@@ -109,21 +109,39 @@ ApplyMetric<TPixel, VDim>
 
   *c->verbose << "Fixed  Image Transform: " << fn_ftran << endl;
   *c->verbose << "Moving Image Transform: " << fn_mtran << endl;
-
+  
+  double factor=1.0; //multiplication factor, mainly just to negate sign on MMI
+  
   // Create the appropriate metric
   typedef itk::ImageToImageMetric<ImageType, ImageType> MetricType;
   typename MetricType::Pointer metric;
   if(!strcmp(metric_name,"MI"))
     {
-    metric = 
+      typename itk::MutualInformationHistogramImageToImageMetric<
+        ImageType,ImageType>::Pointer _metric = 
       itk::MutualInformationHistogramImageToImageMetric<
         ImageType,ImageType>::New();
+        
+      typename itk::MutualInformationHistogramImageToImageMetric<
+        ImageType,ImageType>::HistogramSizeType sz(2);
+      sz.Fill(c->m_HistogramSize);
+      
+      _metric->ComputeGradientOff();
+      _metric->SetHistogramSize(sz);
+      metric=_metric;
     }
   else if(!strcmp(metric_name,"MMI"))
     {
-    metric = 
+      typename itk::MattesMutualInformationImageToImageMetric<
+        ImageType,ImageType>::Pointer _metric=
       itk::MattesMutualInformationImageToImageMetric<
         ImageType,ImageType>::New();
+        
+      _metric->ComputeGradientOff();
+      
+      _metric->SetNumberOfHistogramBins(c->m_HistogramSize);
+      metric=_metric;
+      factor=-1;
     }
   else if(!strcmp(metric_name,"MSQ"))
     {
@@ -139,15 +157,24 @@ ApplyMetric<TPixel, VDim>
     }
   else if(!strcmp(metric_name,"NMI"))
     {
-    metric = 
+      typename itk::NormalizedMutualInformationHistogramImageToImageMetric<
+        ImageType,ImageType>::Pointer _metric = 
       itk::NormalizedMutualInformationHistogramImageToImageMetric<
         ImageType,ImageType>::New();
+        
+      typename itk::NormalizedMutualInformationHistogramImageToImageMetric<
+        ImageType,ImageType>::HistogramSizeType sz(2);
+      sz.Fill(c->m_HistogramSize);
+      
+      _metric->ComputeGradientOff();
+      _metric->SetHistogramSize(sz);
+      metric=_metric;
     }
   else throw ConvertException("Unknown metric %s", metric_name);
 
   // Configure the identity transform
   typename TransformType::Pointer tran = TransformType::New();
-
+  tran->SetIdentity();
 
   double mvalue;
 
@@ -175,14 +202,13 @@ ApplyMetric<TPixel, VDim>
   if (!strcmp(fn_ftran,"none"))
     {  
     //metric->DebugOn();
-
     // Configure the metric
     metric->SetMovingImage(imov);
     metric->SetFixedImage(iref);
     metric->SetTransform(tran);
     metric->SetFixedImageRegion(iref->GetBufferedRegion());
     metric->Initialize();
-
+  
     //std::cout << "metric transform parameters: " << metric->GetTransform()->GetParameters() << endl;
     mvalue = metric->GetValue(tran->GetParameters());
     }
@@ -227,7 +253,7 @@ ApplyMetric<TPixel, VDim>
     }
 
     // Print the value
-    cout << metric_name << " = " << mvalue << endl;
+    cout << metric_name << " = " << mvalue*factor << endl;
 
     // Get image from stack
     // ImagePointer img = c->m_ImageStack.back();

@@ -156,6 +156,9 @@ public:
   // Level set algorithm parameters
   double m_LevSetCurvature, m_LevSetAdvection;
   
+  // Metric histogram size
+  int    m_HistogramSize;
+  
 
   // N3 and N4 filter parameters
   // distance (in mm) of the mesh resolution at the base level

@@ -112,6 +112,8 @@ ImageConverter<TPixel,VDim>
   m_LevSetCurvature = 0.2;
   m_LevSetAdvection = 0.0;
 
+  m_HistogramSize=32;
+  
   // Create an interpolator
   m_Interpolation = "linear";
   CreateInterpolator<TPixel, VDim>(this).CreateLinear();
@@ -196,6 +198,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -mcs, -multicomponent-split" << endl;
   cout << "    -mean" << endl;
   cout << "    -merge" << endl;
+  cout << "    -histogram_size,-hist <n>" <<endl;
   cout << "    -mi, -mutual-info" << endl;
   cout << "    -mixture, -mixture-model" << endl;
   cout << "    -multiply, -times" << endl;
@@ -744,7 +747,11 @@ ImageConverter<TPixel, VDim>
     adapter(true);
     return 0;
     }
-
+  else if(cmd == "-histogram_size" || cmd == "-hist") 
+  {
+    m_HistogramSize= atoi(argv[1]);
+    return 1;
+  }
   else if(cmd == "-mi" || cmd == "-mutual-info")
     {
     ApplyMetric<TPixel, VDim> adapter(this);
