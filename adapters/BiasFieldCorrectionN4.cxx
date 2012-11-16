@@ -15,7 +15,7 @@ BiasFieldCorrectionN4<TPixel, VDim>
 ::operator() ()
 {
   // distance (in mm) of the mesh resolution at the base level
-  double  n4_spline_distance = c->n4_spline_distance;
+  std::vector<double>  n4_spline_distance = c->n4_spline_distance;
   int     n4_shrink_factor=c->n4_shrink_factor;
   int     n4_spline_order=c->n4_spline_order;
   int     n4_histogram_bins= c->n4_histogram_bins;
@@ -59,7 +59,12 @@ BiasFieldCorrectionN4<TPixel, VDim>
   
   *c->verbose << "N4 BiasFieldCorrection #" << c->m_ImageStack.size() << endl;
   *c->verbose << "  Shrink factor: " << n4_shrink_factor << endl;
-  *c->verbose << "  Spline distance: " << n4_spline_distance << endl;
+  
+  *c->verbose << "  Spline distance: ";
+  for(int i=0;i<n4_spline_distance.size();i++) 
+    *c->verbose << n4_spline_distance[i]<<" ";
+  *c->verbose << std::endl;
+  
   *c->verbose << "  Number of histogram bins: "<< n4_histogram_bins<<endl;
   *c->verbose << "  Weiner Filter noise: "<< n4_weiner_noise<<endl;
   *c->verbose << "  Bias FWHM: "<< n4_fwhm<<endl;
@@ -81,21 +86,26 @@ BiasFieldCorrectionN4<TPixel, VDim>
   unsigned long lowerBound[VDim];
   unsigned long upperBound[VDim];
 
+  // if spline distance doesn't have enough elements, just keep using the last one
+  if(n4_spline_distance.size()<VDim)
+    n4_spline_distance.resize(VDim,n4_spline_distance.back()); 
+    
   for( unsigned int d = 0; d < VDim; d++ )
-    {
+  {
     float domain = static_cast<float>( mri->
       GetLargestPossibleRegion().GetSize()[d] - 1 ) * mri->GetSpacing()[d];
-    unsigned int numberOfSpans = static_cast<unsigned int>(
-      vcl_ceil( domain / n4_spline_distance ) );
+      
+    unsigned int numberOfSpans = static_cast<unsigned int>( vcl_ceil( domain / n4_spline_distance[d] ) );
+      
     unsigned long extraPadding = static_cast<unsigned long>( ( numberOfSpans *
-      n4_spline_distance - domain ) / mri->GetSpacing()[d] + 0.5 );
+      n4_spline_distance[d] - domain ) / mri->GetSpacing()[d] + 0.5 );
+      
     lowerBound[d] = static_cast<unsigned long>( 0.5 * extraPadding );
     upperBound[d] = extraPadding - lowerBound[d];
-    newOrigin[d] -= ( static_cast<float>( lowerBound[d] ) *
-      mri->GetSpacing()[d] );
+    newOrigin[d] -= ( static_cast<float>( lowerBound[d] ) * mri->GetSpacing()[d] );
 
     numberOfControlPoints[d] = numberOfSpans + correcter->GetSplineOrder();
-    }
+  }
   correcter->SetNumberOfControlPoints( numberOfControlPoints );
 
   typedef itk::ConstantPadImageFilter<ImageType, ImageType> PadderType;

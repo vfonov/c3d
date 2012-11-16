@@ -162,7 +162,7 @@ public:
 
   // N3 and N4 filter parameters
   // distance (in mm) of the mesh resolution at the base level
-  double  n4_spline_distance ; 
+  std::vector<double>  n4_spline_distance ; 
   // image shrink factor
   int     n4_shrink_factor;
   int     n4_spline_order;

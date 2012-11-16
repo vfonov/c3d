@@ -119,7 +119,8 @@ ImageConverter<TPixel,VDim>
   CreateInterpolator<TPixel, VDim>(this).CreateLinear();
   
   // set default N3/N4 parameters
-  n4_spline_distance = 100;
+  n4_spline_distance.resize(3,100.0);
+  
   // image shrink factor
   n4_shrink_factor=4;
   n4_spline_order=3;
@@ -148,7 +149,7 @@ ImageConverter<TPixel, VDim>
   cout << "    -background" << endl;
   cout << "    -n3, -biascorr" << endl;
   
-  cout << "    -n4_spline_distance <d>mm" << endl;
+  cout << "    -n4_spline_distance <d1[,d2,d3]>mm" << endl;
   cout << "    -n4_shrink_factor <n>" << endl;
   cout << "    -n4_spline_order <n>" << endl;
   cout << "    -n4_histogram_bins <n>" << endl;
@@ -335,15 +336,27 @@ ImageConverter<TPixel, VDim>
     
  else if(cmd == "-n4_spline_distance")
   {
-    n4_spline_distance=atof(argv[1]);
-    *verbose << "N4 spline distance " << n4_spline_distance << endl;
+    char *tmp=strdup(argv[1]);
+    
+    //n4_spline_distance=atof(argv[1]);
+    n4_spline_distance.clear();
+    char *pch = strtok (tmp," ,;");
+    *verbose << "N4 spline distance ";
+    while (pch != NULL)
+    {
+      n4_spline_distance.push_back(atof(pch));
+      *verbose << pch<<" ";
+      pch = strtok (NULL, " ,;");
+    }
+    *verbose << std::endl;
+    free(tmp);
     return 1;
   }
   
  else if(cmd == "-n4_shrink_factor")
   {
     n4_shrink_factor=atoi(argv[1]);
-    *verbose << "N4 shrink factor " << n4_spline_distance << endl;
+    *verbose << "N4 shrink factor " << n4_shrink_factor << endl;
     return 1;
   }
 

@@ -11,7 +11,7 @@ void
 BiasFieldCorrection<TPixel, VDim>
 ::operator() ()
 {
-  double  n4_spline_distance = c->n4_spline_distance;
+  std::vector<double>  n4_spline_distance = c->n4_spline_distance;
   int     n4_shrink_factor=c->n4_shrink_factor;
   int     n4_spline_order=c->n4_spline_order;
   int     n4_histogram_bins= c->n4_histogram_bins;
@@ -50,6 +50,10 @@ BiasFieldCorrection<TPixel, VDim>
 
   // Report what the filter is doing
   *c->verbose << "N3 BiasFieldCorrection #" << c->m_ImageStack.size() << endl;
+  *c->verbose << "  Spline distance: ";
+  for(int i=0;i<n4_spline_distance.size();i++) 
+    *c->verbose << n4_spline_distance[i]<<" ";
+  *c->verbose << std::endl;
   
   // Set up a filter to shrink image by a factor
   typedef itk::ShrinkImageFilter<ImageType, ImageType> ShrinkerType;
@@ -106,22 +110,26 @@ BiasFieldCorrection<TPixel, VDim>
 
   unsigned long lowerBound[VDim];
   unsigned long upperBound[VDim];
+  
+  // if spline distance doesn't have enough elements, just keep using the last one
+  if(n4_spline_distance.size()<VDim)
+    n4_spline_distance.resize(VDim,n4_spline_distance.back()); 
 
   for( unsigned int d = 0; d < VDim; d++ )
-    {
+  {
     float domain = static_cast<float>( mri->
       GetLargestPossibleRegion().GetSize()[d] - 1 ) * mri->GetSpacing()[d];
     unsigned int numberOfSpans = static_cast<unsigned int>(
-      vcl_ceil( domain / n4_spline_distance ) );
+      vcl_ceil( domain / n4_spline_distance[d] ) );
     unsigned long extraPadding = static_cast<unsigned long>( ( numberOfSpans *
-      n4_spline_distance - domain ) / mri->GetSpacing()[d] + 0.5 );
+      n4_spline_distance[d] - domain ) / mri->GetSpacing()[d] + 0.5 );
     lowerBound[d] = static_cast<unsigned long>( 0.5 * extraPadding );
     upperBound[d] = extraPadding - lowerBound[d];
     newOrigin[d] -= ( static_cast<float>( lowerBound[d] ) *
       mri->GetSpacing()[d] );
 
     numberOfControlPoints[d] = numberOfSpans + correcter->GetSplineOrder();
-    }
+  }
   correcter->SetNumberOfControlPoints( numberOfControlPoints );
   
   
