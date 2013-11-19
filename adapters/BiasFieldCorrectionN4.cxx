@@ -128,7 +128,7 @@ BiasFieldCorrectionN4<TPixel, VDim>
     // Compute mask using Otsu threshold
     typedef itk::OtsuThresholdImageFilter<ImageType, ImageType> ThresholderType;
     typename ThresholderType::Pointer otsu = ThresholderType::New();
-    otsu->SetInput( padder->GetOutput() );
+    otsu->SetInput( mri );
     otsu->SetNumberOfHistogramBins( 200 );
     otsu->SetInsideValue( 0 );
     otsu->SetOutsideValue( 1 );
