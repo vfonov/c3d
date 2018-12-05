@@ -84,6 +84,8 @@ HessianEigenValues<TPixel, VDim>
 }
 
 // Invocations
+/* VF: broken (?)
 template class HessianEigenValues<double, 2>;
 template class HessianEigenValues<double, 3>;
 template class HessianEigenValues<double, 4>;
+*/

@@ -134,6 +134,8 @@ MomentsFeatures<TPixel, VDim>
 }
 
 // Invocations
+/* VF: broken (?)
 template class MomentsFeatures<double, 2>;
 template class MomentsFeatures<double, 3>;
 template class MomentsFeatures<double, 4>;
+*/

@@ -862,8 +862,9 @@ ImageConverter<TPixel, VDim>
   else if (cmd == "-hesseig" || cmd == "-hessian-eigenvalues")
     {
     double scale = atof(argv[1]);
+    /*VF: broken
     HessianEigenValues<TPixel,VDim> adapter(this);
-    adapter(scale);
+    adapter(scale);*/
 
     return 1;
     }
@@ -1148,7 +1149,8 @@ ImageConverter<TPixel, VDim>
   else if (cmd == "-moments")
     {
     SizeType radius = ReadSizeVector(argv[1]);
-    MomentsFeatures<TPixel, VDim>(this)(radius);
+    /*VF: broken
+    MomentsFeatures<TPixel, VDim>(this)(radius);*/
     return 1;
     }
 
